@@ -12,21 +12,18 @@ src/
 └── styles.scss
 ```
 
-O projeto ainda esta na base gerada pelo Angular CLI.
+O projeto possui o shell da aplicacao e a feature `fixed-expenses`.
 
 ## Estrutura futura desejada
 
 ```text
 src/app/
-├── core/
-├── layout/
-├── shared/
 └── features/
-    ├── dashboard/
-    ├── accounts/
-    ├── transactions/
-    ├── categories/
-    └── settings/
+    └── fixed-expenses/
+        ├── components/
+        ├── models/
+        ├── pages/
+        └── services/
 ```
 
 ## Regras

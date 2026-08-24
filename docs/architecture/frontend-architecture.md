@@ -22,6 +22,12 @@ src/app/
 
 `features` deve concentrar funcionalidades por dominio, com baixo acoplamento entre elas.
 
+## Feature implementada
+
+`features/fixed-expenses` concentra modelos, cliente HTTP, store com Signals, formulario reutilizavel e pagina mensal. O carregamento ocorre por rota lazy em `/despesas-fixas`.
+
+O store coordena estado remoto, filtros locais, competencia e atualizacoes otimistas. O backend continua sendo a autoridade para persistencia e regras financeiras.
+
 ## Features futuras
 
 Possiveis features:
@@ -49,6 +55,6 @@ Esses diretorios so devem ser criados quando forem necessarios. Evite estruturas
 
 Signals devem ser a primeira opcao para estado local e de feature. Bibliotecas externas de estado so devem ser consideradas quando houver necessidade clara, complexidade comprovada e decisao registrada.
 
-## Comunicacao futura
+## Comunicacao
 
-A comunicacao com backend futuro deve comecar por REST, salvo decisao tecnica posterior. Integracoes HTTP nao fazem parte desta etapa inicial.
+A comunicacao com o backend usa REST por `HttpClient`. A URL base local fica em `src/environments/environment.ts`. Falhas de status revertem a atualizacao otimista para evitar divergencia silenciosa.

@@ -74,6 +74,22 @@ Registro leve de decisoes arquiteturais do Orbiafly. Nao e necessario seguir um 
 - Consequencias: evolucao deve priorizar modularidade interna.
 - Status: aceita.
 
+## ORB-001 - Estado e filtros de despesas fixas
+
+- Decisao: usar um store de feature com Signals e cliente REST dedicado.
+- Contexto: a tela combina competencia, dados remotos, filtros e atualizacoes frequentes de pagamento.
+- Motivo: manter estado previsivel sem adicionar biblioteca externa.
+- Consequencias: filtros de nome, categoria e status ocorrem localmente depois da carga da competencia completa; alteracao de status e otimista e possui rollback em falha.
+- Status: aceita.
+
+## ORB-001 - Representacao monetaria na interface
+
+- Decisao: receber valores numericos da API, converter somas visuais para centavos inteiros e formatar em `pt-BR`/`BRL`.
+- Contexto: o frontend apenas apresenta e envia valores com duas casas; o backend com `BigDecimal` permanece como autoridade.
+- Motivo: evitar erros visuais de soma sem introduzir uma dependencia decimal nesta etapa.
+- Consequencias: calculos financeiros avancados exigirao reavaliacao e possivelmente um tipo decimal dedicado.
+- Status: aceita.
+
 ## Arquitetura por dominio/feature
 
 - Decisao: organizar funcionalidades por dominio ou feature.

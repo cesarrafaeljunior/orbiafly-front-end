@@ -1,0 +1,104 @@
+<div class="modal-backdrop" (mousedown)="cancelled.emit()">
+  <section
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="expense() ? 'edit-expense-title' : 'new-expense-title'"
+    (mousedown)="$event.stopPropagation()"
+  >
+    <header class="modal__header">
+      <div>
+        <p class="eyebrow">Configuração recorrente</p>
+        @if (expense()) {
+          <h2 id="edit-expense-title">Editar despesa fixa</h2>
+        } @else {
+          <h2 id="new-expense-title">Nova despesa fixa</h2>
+        }
+      </div>
+      <button
+        class="icon-button"
+        type="button"
+        title="Fechar"
+        aria-label="Fechar"
+        (click)="cancelled.emit()"
+      >
+        ×
+      </button>
+    </header>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label class="field field--wide">
+        <span>Nome</span>
+        <input
+          formControlName="name"
+          maxlength="120"
+          autocomplete="off"
+          placeholder="Ex.: Energia"
+        />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <small>Informe um nome com até 120 caracteres.</small>
+        }
+      </label>
+
+      <div class="field-grid">
+        <label class="field">
+          <span>Valor padrão</span>
+          <div class="money-input">
+            <span>R$</span>
+            <input
+              formControlName="defaultAmount"
+              type="number"
+              min="0"
+              step="0.01"
+              inputmode="decimal"
+            />
+          </div>
+          @if (form.controls.defaultAmount.touched && form.controls.defaultAmount.invalid) {
+            <small>Informe um valor igual ou maior que zero.</small>
+          }
+        </label>
+
+        <label class="field">
+          <span>Dia do vencimento</span>
+          <input formControlName="dueDay" type="number" min="1" max="31" inputmode="numeric" />
+          @if (form.controls.dueDay.touched && form.controls.dueDay.invalid) {
+            <small>Use um dia entre 1 e 31.</small>
+          }
+        </label>
+      </div>
+
+      <label class="field field--wide">
+        <span>Categoria</span>
+        <select formControlName="categoryId">
+          <option value="" disabled>Selecione</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+        @if (form.controls.categoryId.touched && form.controls.categoryId.invalid) {
+          <small>Selecione uma categoria.</small>
+        }
+      </label>
+
+      @if (expense()) {
+        <label class="toggle-row">
+          <input formControlName="active" type="checkbox" />
+          <span>
+            <strong>Despesa ativa</strong>
+            <small>Desativar impede novas ocorrências e preserva o histórico.</small>
+          </span>
+        </label>
+        <p class="form-note">Alterações recorrentes valem para ocorrências ainda não criadas.</p>
+      }
+
+      <footer class="modal__actions">
+        <button class="button button--secondary" type="button" (click)="cancelled.emit()">
+          Cancelar
+        </button>
+        <button class="button button--primary" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Salvando...' : 'Salvar' }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

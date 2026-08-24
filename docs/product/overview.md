@@ -8,6 +8,8 @@ Muitas pessoas acompanham dinheiro de forma fragmentada: extratos, anotacoes, pl
 
 Orbiafly deve reduzir essa friccao com uma experiencia direta, visualmente limpa e confiavel.
 
+O primeiro fluxo implementado substitui o controle manual de despesas fixas mensais. Uma recorrencia cadastrada aparece nas competencias seguintes como pendente sem exigir reset.
+
 ## Publico inicial
 
 O publico inicial e uma pessoa que deseja organizar as proprias financas sem complexidade de ERP, contabilidade avancada ou produto empresarial.

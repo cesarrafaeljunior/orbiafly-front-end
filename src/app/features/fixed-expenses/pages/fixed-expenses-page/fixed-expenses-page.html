@@ -1,0 +1,271 @@
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Planejamento mensal</p>
+      <h1>Despesas fixas</h1>
+    </div>
+    <button
+      class="button button--primary"
+      type="button"
+      [disabled]="store.categories().length === 0"
+      (click)="openCreate()"
+    >
+      <span aria-hidden="true">+</span>
+      Nova despesa
+    </button>
+  </header>
+
+  <section class="period-bar" aria-label="Competência selecionada">
+    <button
+      class="icon-button"
+      type="button"
+      title="Mês anterior"
+      aria-label="Mês anterior"
+      (click)="store.moveMonth(-1)"
+    >
+      ‹
+    </button>
+    <div>
+      <span>Competência</span>
+      <strong>{{ store.periodLabel() }}</strong>
+    </div>
+    <button
+      class="icon-button"
+      type="button"
+      title="Próximo mês"
+      aria-label="Próximo mês"
+      (click)="store.moveMonth(1)"
+    >
+      ›
+    </button>
+  </section>
+
+  <section class="summary" aria-label="Resumo da competência">
+    <div class="metric">
+      <span>Total</span>
+      <strong>{{ store.summary().total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+      <small
+        >{{ store.items().length }} {{ store.items().length === 1 ? 'despesa' : 'despesas' }}</small
+      >
+    </div>
+    <div class="metric metric--paid">
+      <span>Pago</span>
+      <strong>{{
+        store.summary().paidTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+      }}</strong>
+      <small>
+        {{ store.summary().paidCount }}
+        {{ store.summary().paidCount === 1 ? 'concluída' : 'concluídas' }}
+      </small>
+    </div>
+    <div class="metric metric--pending">
+      <span>Pendente</span>
+      <strong>{{
+        store.summary().pendingTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+      }}</strong>
+      <small>{{ store.summary().pendingCount }} aguardando</small>
+    </div>
+  </section>
+
+  <section class="controls" aria-label="Filtros de despesas">
+    <div class="tabs" role="group" aria-label="Status do pagamento">
+      <button
+        type="button"
+        [class.tabs__active]="store.statusFilter() === 'ALL'"
+        [attr.aria-pressed]="store.statusFilter() === 'ALL'"
+        (click)="setStatusFilter('ALL')"
+      >
+        Todas
+      </button>
+      <button
+        type="button"
+        [class.tabs__active]="store.statusFilter() === 'PENDING'"
+        [attr.aria-pressed]="store.statusFilter() === 'PENDING'"
+        (click)="setStatusFilter('PENDING')"
+      >
+        Pendentes
+      </button>
+      <button
+        type="button"
+        [class.tabs__active]="store.statusFilter() === 'PAID'"
+        [attr.aria-pressed]="store.statusFilter() === 'PAID'"
+        (click)="setStatusFilter('PAID')"
+      >
+        Pagas
+      </button>
+    </div>
+
+    <div class="filter-fields">
+      <label class="search-field">
+        <span class="visually-hidden">Buscar por nome</span>
+        <input
+          type="search"
+          placeholder="Buscar despesa"
+          [value]="store.search()"
+          (input)="setSearch($event)"
+        />
+      </label>
+      <label>
+        <span class="visually-hidden">Filtrar por categoria</span>
+        <select [value]="store.categoryFilter()" (change)="setCategory($event)">
+          <option value="ALL">Todas as categorias</option>
+          @for (category of store.categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </section>
+
+  @if (store.error()) {
+    <section class="feedback feedback--error" role="alert">
+      <div>
+        <strong>Algo não saiu como esperado</strong>
+        <p>{{ store.error() }}</p>
+      </div>
+      <button class="button button--secondary" type="button" (click)="store.initialize()">
+        Tentar novamente
+      </button>
+    </section>
+  }
+
+  @if (store.loading()) {
+    <section class="loading-state" aria-live="polite" aria-label="Carregando despesas">
+      @for (row of [1, 2, 3, 4]; track row) {
+        <div></div>
+      }
+    </section>
+  } @else if (store.items().length === 0) {
+    <section class="empty-state">
+      <strong>Nenhuma despesa fixa nesta competência.</strong>
+      <p>Cadastre a primeira despesa para começar o acompanhamento mensal.</p>
+      <button class="button button--primary" type="button" (click)="openCreate()">
+        Nova despesa
+      </button>
+    </section>
+  } @else if (store.filteredItems().length === 0) {
+    <section class="empty-state">
+      <strong>Nenhum resultado para os filtros atuais.</strong>
+      <p>Altere a busca, o status ou a categoria selecionada.</p>
+      <button class="button button--secondary" type="button" (click)="store.clearFilters()">
+        Limpar filtros
+      </button>
+    </section>
+  } @else {
+    <section class="expense-list" aria-label="Despesas da competência">
+      <div class="list-header" aria-hidden="true">
+        <span>Despesa</span>
+        <span>Vencimento</span>
+        <span>Valor</span>
+        <span>Status</span>
+        <span>Ações</span>
+      </div>
+      @for (item of store.filteredItems(); track item.occurrenceId) {
+        <article class="expense-row" [class.expense-row--inactive]="!item.active">
+          <div class="expense-main">
+            <strong>{{ item.name }}</strong>
+            <span>{{ item.category }}</span>
+            @if (!item.active) {
+              <small>Inativa</small>
+            }
+          </div>
+          <div class="due-date">
+            <span class="mobile-label">Vencimento</span>
+            <strong>Dia {{ item.dueDay }}</strong>
+          </div>
+          <div class="amount">
+            <span class="mobile-label">Valor</span>
+            <strong>{{ item.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+          </div>
+          <button
+            class="status-button"
+            type="button"
+            [class.status-button--paid]="item.status === 'PAID'"
+            [attr.aria-pressed]="item.status === 'PAID'"
+            [disabled]="store.busyIds().has(item.occurrenceId)"
+            (click)="store.toggleStatus(item)"
+          >
+            <span class="status-dot" aria-hidden="true"></span>
+            {{ item.status === 'PAID' ? 'Pago' : 'Pendente' }}
+          </button>
+          <div class="row-actions">
+            <button type="button" (click)="openMonthlyEdit(item)">Editar mês</button>
+            <button type="button" (click)="openEdit(item)">Editar despesa</button>
+          </div>
+        </article>
+      }
+    </section>
+  }
+</main>
+
+@if (showExpenseForm()) {
+  <app-expense-form
+    [categories]="store.categories()"
+    [expense]="editingExpense()"
+    [submitting]="store.submitting()"
+    (saved)="saveExpense($event)"
+    (cancelled)="closeExpenseForm()"
+  />
+}
+
+@if (monthlyExpense(); as item) {
+  <div class="modal-backdrop" (mousedown)="closeMonthlyEdit()">
+    <section
+      class="amount-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="monthly-value-title"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <header>
+        <div>
+          <p class="eyebrow">Somente {{ store.periodLabel() }}</p>
+          <h2 id="monthly-value-title">Editar valor mensal</h2>
+        </div>
+        <button
+          class="icon-button"
+          type="button"
+          title="Fechar"
+          aria-label="Fechar"
+          (click)="closeMonthlyEdit()"
+        >
+          ×
+        </button>
+      </header>
+      <form (submit)="$event.preventDefault(); saveMonthlyAmount()">
+        <div class="monthly-context">
+          <strong>{{ item.name }}</strong>
+          <span
+            >Valor padrão:
+            {{ item.defaultAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</span
+          >
+        </div>
+        <label class="amount-field">
+          <span>Valor desta competência</span>
+          <input
+            [formControl]="monthlyAmount"
+            type="number"
+            min="0"
+            step="0.01"
+            inputmode="decimal"
+          />
+          @if (monthlyAmount.touched && monthlyAmount.invalid) {
+            <small>Informe um valor igual ou maior que zero.</small>
+          }
+        </label>
+        <footer>
+          <button class="button button--secondary" type="button" (click)="closeMonthlyEdit()">
+            Cancelar
+          </button>
+          <button class="button button--primary" type="submit" [disabled]="store.submitting()">
+            Salvar mês
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (store.notice()) {
+  <div class="toast" role="status">{{ store.notice() }}</div>
+}
