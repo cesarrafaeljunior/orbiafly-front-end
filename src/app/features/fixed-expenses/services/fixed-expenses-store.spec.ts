@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MonthlyExpense } from '../models/fixed-expense.models';
 import { FixedExpensesApi } from './fixed-expenses-api';
 import { FixedExpensesStore } from './fixed-expenses-store';
+import { AccountsApi } from '../../accounts/services/accounts-api';
 
 const pendingExpense: MonthlyExpense = {
   occurrenceId: 'occurrence-1',
@@ -17,6 +18,8 @@ const pendingExpense: MonthlyExpense = {
   category: 'Casa',
   status: 'PENDING',
   paidAt: null,
+  financialAccountId: null,
+  financialAccountName: null,
   active: true,
 };
 
@@ -40,6 +43,10 @@ describe('FixedExpensesStore', () => {
     update: vi.fn(),
     updateAmount: vi.fn(),
     updateStatus: vi.fn(),
+    registerPayment: vi.fn(),
+  };
+  const accountsApi = {
+    getOverview: vi.fn(),
   };
   let store: FixedExpensesStore;
 
@@ -50,6 +57,25 @@ describe('FixedExpensesStore', () => {
         { id: 'category-home', name: 'Casa' },
         { id: 'category-subscriptions', name: 'Assinaturas' },
       ]),
+    );
+    accountsApi.getOverview.mockReturnValue(
+      of({
+        totalAvailableBalance: 250,
+        activeCount: 1,
+        accounts: [
+          {
+            id: 'account-1',
+            name: 'Conta principal',
+            type: 'CHECKING',
+            institution: 'Banco',
+            openingBalance: 250,
+            currentBalance: 250,
+            active: true,
+            createdAt: '2026-08-01T00:00:00Z',
+            updatedAt: '2026-08-01T00:00:00Z',
+          },
+        ],
+      }),
     );
     api.getMonthly.mockReturnValue(
       of({
@@ -66,7 +92,11 @@ describe('FixedExpensesStore', () => {
       }),
     );
     TestBed.configureTestingModule({
-      providers: [FixedExpensesStore, { provide: FixedExpensesApi, useValue: api }],
+      providers: [
+        FixedExpensesStore,
+        { provide: FixedExpensesApi, useValue: api },
+        { provide: AccountsApi, useValue: accountsApi },
+      ],
     });
     store = TestBed.inject(FixedExpensesStore);
     store.year.set(2026);
@@ -137,6 +167,42 @@ describe('FixedExpensesStore', () => {
     await store.toggleStatus(paid);
     expect(store.items()[0].status).toBe('PAID');
     expect(store.error()).toBe('Falha simulada.');
+  });
+
+  it('registers a payment against an account and exposes a negative balance warning', async () => {
+    await store.initialize();
+    api.registerPayment.mockReturnValue(
+      of({
+        occurrence: {
+          ...pendingExpense,
+          status: 'PAID',
+          paidAt: '2026-08-18T12:00:00Z',
+          financialAccountId: 'account-1',
+          financialAccountName: 'Conta principal',
+        },
+        payment: {
+          id: 'transaction-1',
+          balanceEffect: -247.82,
+          occurredOn: '2026-08-18',
+        },
+        financialAccount: {
+          id: 'account-1',
+          name: 'Conta principal',
+          currentBalance: 2.18,
+          active: true,
+        },
+        updatedBalance: -10,
+        negativeBalance: true,
+      }),
+    );
+
+    const succeeded = await store.registerPayment(pendingExpense, 'account-1', '2026-08-18');
+
+    expect(succeeded).toBe(true);
+    expect(api.registerPayment).toHaveBeenCalledWith('occurrence-1', 'account-1', '2026-08-18');
+    expect(store.items()[0].financialAccountName).toBe('Conta principal');
+    expect(store.accounts()[0].currentBalance).toBe(-10);
+    expect(store.notice()).toContain('saldo negativo');
   });
 
   it('exposes a useful error when the monthly request fails', async () => {

@@ -90,6 +90,38 @@ Registro leve de decisoes arquiteturais do Orbiafly. Nao e necessario seguir um 
 - Consequencias: calculos financeiros avancados exigirao reavaliacao e possivelmente um tipo decimal dedicado.
 - Status: aceita.
 
+## ORB-002 - Dashboard orientado pelo contrato do backend
+
+- Decisao: exibir diretamente um DTO mensal agregado pelo backend, sem recalcular totais, atrasos, percentuais ou rankings no frontend.
+- Contexto: a mesma regra financeira deve permanecer consistente entre consumidores e evolucoes futuras.
+- Motivo: manter o backend como autoridade do dominio e o componente focado em apresentacao e interacao.
+- Consequencias: cada troca de competencia faz uma unica requisicao; o store descarta dados anteriores durante a carga e trata erro e vazio explicitamente.
+- Status: aceita.
+
+## ORB-002 - Visualizacao sem biblioteca de graficos
+
+- Decisao: usar elementos HTML e CSS acessiveis para progresso e distribuicao por categoria.
+- Contexto: o dashboard inicial exige comparacao simples, nao interacao analitica avancada.
+- Motivo: evitar dependencia e complexidade sem necessidade real.
+- Consequencias: barras incluem valores textuais e semantica de progresso; uma biblioteca so deve ser avaliada quando houver novos requisitos.
+- Status: aceita.
+
+## ORB-003 - Contas e pagamentos em stores de feature
+
+- Decisao: manter contas e despesas fixas em stores separados, usando o cliente de contas na despesa somente para selecionar a origem e refletir o saldo retornado pelo backend.
+- Contexto: o pagamento conecta os dominios, mas a atomicidade e o calculo financeiro pertencem ao backend.
+- Motivo: manter os componentes focados em interacao e evitar duplicar regras de saldo no navegador.
+- Consequencias: a pagina de contas sempre consome saldos derivados; pagamento e ajuste usam os valores retornados pela API e recarregam historicos quando necessario.
+- Status: aceita.
+
+## ORB-003 - Saldo patrimonial separado da competencia
+
+- Decisao: mostrar saldo disponivel em uma faixa propria do dashboard, inclusive quando a competencia esta sem despesas.
+- Contexto: saldo de conta nao e total mensal nem receita.
+- Motivo: evitar somas semanticamente incorretas e manter a origem do indicador explicita.
+- Consequencias: o DTO agregado do dashboard fornece contas e saldo; totais pago e pendente continuam limitados a despesas fixas.
+- Status: aceita.
+
 ## Arquitetura por dominio/feature
 
 - Decisao: organizar funcionalidades por dominio ou feature.

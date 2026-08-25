@@ -168,6 +168,15 @@
             @if (!item.active) {
               <small>Inativa</small>
             }
+            @if (item.status === 'PAID') {
+              <small class="payment-source">
+                {{
+                  item.financialAccountName
+                    ? 'Pago com ' + item.financialAccountName
+                    : 'Origem não registrada'
+                }}
+              </small>
+            }
           </div>
           <div class="due-date">
             <span class="mobile-label">Vencimento</span>
@@ -183,7 +192,7 @@
             [class.status-button--paid]="item.status === 'PAID'"
             [attr.aria-pressed]="item.status === 'PAID'"
             [disabled]="store.busyIds().has(item.occurrenceId)"
-            (click)="store.toggleStatus(item)"
+            (click)="changePayment(item)"
           >
             <span class="status-dot" aria-hidden="true"></span>
             {{ item.status === 'PAID' ? 'Pago' : 'Pendente' }}
@@ -264,6 +273,17 @@
       </form>
     </section>
   </div>
+}
+
+@if (payingExpense(); as item) {
+  <app-payment-form
+    [expense]="item"
+    [accounts]="store.accounts()"
+    [periodLabel]="store.periodLabel()"
+    [submitting]="store.submitting()"
+    (confirmed)="confirmPayment($event)"
+    (cancelled)="closePayment()"
+  />
 }
 
 @if (store.notice()) {

@@ -2,6 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ExpenseForm } from '../../components/expense-form/expense-form';
+import { PaymentForm, PaymentPayload } from '../../components/payment-form/payment-form';
 import {
   ExpenseStatusFilter,
   FixedExpensePayload,
@@ -10,7 +11,7 @@ import {
 import { FixedExpensesStore } from '../../services/fixed-expenses-store';
 
 @Component({
-  imports: [CurrencyPipe, ExpenseForm, ReactiveFormsModule],
+  imports: [CurrencyPipe, ExpenseForm, PaymentForm, ReactiveFormsModule],
   providers: [FixedExpensesStore],
   selector: 'app-fixed-expenses-page',
   styleUrl: './fixed-expenses-page.scss',
@@ -21,6 +22,7 @@ export class FixedExpensesPage implements OnInit {
   protected readonly showExpenseForm = signal(false);
   protected readonly editingExpense = signal<MonthlyExpense | null>(null);
   protected readonly monthlyExpense = signal<MonthlyExpense | null>(null);
+  protected readonly payingExpense = signal<MonthlyExpense | null>(null);
   protected readonly monthlyAmount = new FormControl(0, {
     nonNullable: true,
     validators: [Validators.required, Validators.min(0)],
@@ -91,5 +93,27 @@ export class FixedExpensesPage implements OnInit {
 
   protected setCategory(event: Event): void {
     this.store.categoryFilter.set((event.target as HTMLSelectElement).value);
+  }
+
+  protected changePayment(item: MonthlyExpense): void {
+    if (item.status === 'PENDING' && this.store.accounts().length > 0) {
+      this.payingExpense.set(item);
+      return;
+    }
+    void this.store.toggleStatus(item);
+  }
+
+  protected closePayment(): void {
+    this.payingExpense.set(null);
+  }
+
+  protected async confirmPayment(payload: PaymentPayload): Promise<void> {
+    const item = this.payingExpense();
+    if (!item) {
+      return;
+    }
+    if (await this.store.registerPayment(item, payload.financialAccountId, payload.paymentDate)) {
+      this.closePayment();
+    }
   }
 }

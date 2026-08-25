@@ -21,6 +21,8 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.brand')?.textContent).toContain('Orbiafly');
+    expect(compiled.querySelector('nav')?.textContent).toContain('Dashboard');
     expect(compiled.querySelector('nav')?.textContent).toContain('Despesas fixas');
+    expect(compiled.querySelector('nav')?.textContent).toContain('Contas');
   });
 });

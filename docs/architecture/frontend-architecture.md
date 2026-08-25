@@ -22,18 +22,22 @@ src/app/
 
 `features` deve concentrar funcionalidades por dominio, com baixo acoplamento entre elas.
 
-## Feature implementada
+## Features implementadas
 
 `features/fixed-expenses` concentra modelos, cliente HTTP, store com Signals, formulario reutilizavel e pagina mensal. O carregamento ocorre por rota lazy em `/despesas-fixas`.
 
-O store coordena estado remoto, filtros locais, competencia e atualizacoes otimistas. O backend continua sendo a autoridade para persistencia e regras financeiras.
+O store coordena estado remoto, filtros locais, competencia e pagamentos. O backend continua sendo a autoridade para persistencia, atomicidade e regras financeiras.
+
+`features/accounts` concentra cadastro, edicao, desativacao, ajuste de saldo e consulta de movimentacoes. A rota `/contas` e lazy-loaded; saldos exibidos sempre sao recebidos da API.
+
+`features/dashboard` concentra o contrato mensal, cliente HTTP, store com Signals e pagina do dashboard. A rota `/dashboard` e lazy-loaded e tambem e o destino inicial da aplicacao.
+
+O dashboard exibe as agregacoes prontas recebidas de `/api/v1/dashboard/monthly`, incluindo saldo e contas ativas. O frontend apenas formata e organiza os dados; regras de saldo, atraso, percentuais, ordenacao e limites permanecem no backend.
 
 ## Features futuras
 
 Possiveis features:
 
-- `dashboard`
-- `accounts`
 - `transactions`
 - `categories`
 - `settings`

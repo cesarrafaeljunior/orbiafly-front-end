@@ -2,7 +2,7 @@
 
 Orbiafly e uma aplicacao de organizacao financeira pessoal. O objetivo do produto e ajudar o usuario a enxergar receitas, despesas, contas e saldos com clareza, simplicidade e confiabilidade.
 
-Este repositorio contem o frontend do projeto. A primeira feature implementada gerencia despesas fixas e consome o backend Spring Boot em `http://localhost:8080`.
+Este repositorio contem o frontend do projeto. As features implementadas gerenciam contas financeiras e despesas fixas e apresentam um dashboard mensal, consumindo o backend Spring Boot em `http://localhost:8080`.
 
 ## Stack frontend
 
@@ -44,10 +44,12 @@ O backend e o PostgreSQL devem estar em execucao para utilizar a feature. A URL 
 Execute testes e build de producao com:
 
 ```bash
-npm test -- --watch=false
+npm test
 npm run build
 ```
 
-## Funcionalidade atual
+## Funcionalidades atuais
 
-Despesas fixas permite cadastrar recorrencias, navegar entre competencias, filtrar, buscar, editar o valor mensal e alternar rapidamente entre pago e pendente. Qualquer nova funcionalidade deve respeitar o escopo da tarefa, os documentos em `docs/` e o contrato operacional em [`AGENTS.md`](AGENTS.md).
+O dashboard abre na competencia atual, mostra o saldo das contas ativas e resume total previsto, pago, pendente, progresso, atrasos, categorias, proximos vencimentos e maiores despesas.
+
+Contas permite cadastrar origens reais de dinheiro, consultar saldo e movimentacoes, ajustar divergencias e desativar contas sem apagar o historico. Despesas fixas permite cadastrar recorrencias, navegar entre competencias, filtrar, buscar, editar o valor mensal e registrar ou estornar pagamentos vinculados a uma conta. Qualquer nova funcionalidade deve respeitar o escopo da tarefa, os documentos em `docs/` e o contrato operacional em [`AGENTS.md`](AGENTS.md).

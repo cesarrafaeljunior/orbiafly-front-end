@@ -1,0 +1,61 @@
+<div class="modal-backdrop" (mousedown)="cancelled.emit()">
+  <section
+    class="payment-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="payment-title"
+    (mousedown)="$event.stopPropagation()"
+  >
+    <header>
+      <div>
+        <p class="eyebrow">Saída de dinheiro</p>
+        <h2 id="payment-title">Registrar pagamento</h2>
+      </div>
+      <button type="button" title="Fechar" aria-label="Fechar" (click)="cancelled.emit()">×</button>
+    </header>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="payment-context">
+        <div>
+          <strong>{{ expense().name }}</strong>
+          <span>{{ periodLabel() }}</span>
+        </div>
+        <strong>{{ expense().amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+      </div>
+      <label>
+        <span>Origem do dinheiro</span>
+        <select formControlName="financialAccountId">
+          <option value="" disabled>Selecione uma conta</option>
+          @for (account of accounts(); track account.id) {
+            <option [value]="account.id">
+              {{ account.name }} —
+              {{ account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+            </option>
+          }
+        </select>
+      </label>
+      @if (selectedAccount(); as account) {
+        <div class="available-balance">
+          <span>Saldo disponível</span>
+          <strong>{{
+            account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}</strong>
+        </div>
+        @if (account.currentBalance < expense().amount) {
+          <p class="negative-warning" role="status">
+            O pagamento será permitido, mas deixará esta conta com saldo negativo.
+          </p>
+        }
+      }
+      <label>
+        <span>Data do pagamento</span>
+        <input formControlName="paymentDate" type="date" />
+      </label>
+      <footer>
+        <button class="secondary-button" type="button" (click)="cancelled.emit()">Cancelar</button>
+        <button class="primary-button" type="submit" [disabled]="submitting()">
+          Confirmar pagamento
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

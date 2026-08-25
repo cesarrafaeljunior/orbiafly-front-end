@@ -1,0 +1,62 @@
+:host {
+  display: block;
+}
+
+.accounts-band {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary-light-blue);
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: minmax(12rem, 1fr) minmax(16rem, 2fr) auto;
+  padding: var(--space-5);
+}
+
+.accounts-band > div:first-child,
+.account-list span {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.accounts-band span,
+.accounts-band small {
+  color: var(--text-muted);
+}
+
+.accounts-band > div:first-child > strong {
+  font-size: var(--font-size-2xl);
+}
+
+.account-list {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.account-list strong {
+  color: var(--text-primary);
+}
+
+.accounts-band a {
+  color: var(--primary-light-blue);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 48rem) {
+  .accounts-band {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .account-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 30rem) {
+  .account-list {
+    grid-template-columns: 1fr;
+  }
+}

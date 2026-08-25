@@ -1,6 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { FinancialAccount } from '../../accounts/models/account.models';
+import { AccountsApi } from '../../accounts/services/accounts-api';
 import {
   ApiProblem,
   Category,
@@ -20,6 +22,7 @@ const monthFormatter = new Intl.DateTimeFormat('pt-BR', {
 @Injectable()
 export class FixedExpensesStore {
   private readonly api = inject(FixedExpensesApi);
+  private readonly accountsApi = inject(AccountsApi);
   private requestSequence = 0;
 
   readonly currentDate = new Date();
@@ -27,6 +30,7 @@ export class FixedExpensesStore {
   readonly month = signal(this.currentDate.getMonth() + 1);
   readonly items = signal<MonthlyExpense[]>([]);
   readonly categories = signal<Category[]>([]);
+  readonly accounts = signal<FinancialAccount[]>([]);
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
@@ -75,7 +79,16 @@ export class FixedExpensesStore {
   );
 
   async initialize(): Promise<void> {
-    await Promise.all([this.loadCategories(), this.loadMonth()]);
+    await Promise.all([this.loadCategories(), this.loadAccounts(), this.loadMonth()]);
+  }
+
+  async loadAccounts(): Promise<void> {
+    try {
+      const overview = await firstValueFrom(this.accountsApi.getOverview());
+      this.accounts.set(overview.accounts);
+    } catch (error: unknown) {
+      this.error.set(this.errorMessage(error, 'Não foi possível carregar as contas de pagamento.'));
+    }
   }
 
   async loadCategories(): Promise<void> {
@@ -162,6 +175,9 @@ export class FixedExpensesStore {
     try {
       const updated = await firstValueFrom(this.api.updateStatus(item.occurrenceId, nextStatus));
       this.replaceItem(updated);
+      if (nextStatus === 'PENDING' && item.financialAccountId) {
+        await this.loadAccounts();
+      }
       this.showNotice(
         nextStatus === 'PAID' ? 'Pagamento registrado.' : 'Pagamento voltou para pendente.',
       );
@@ -169,6 +185,44 @@ export class FixedExpensesStore {
       this.items.set(previousItems);
       this.error.set(this.errorMessage(error, 'Não foi possível alterar o pagamento.'));
     } finally {
+      this.markBusy(item.occurrenceId, false);
+    }
+  }
+
+  async registerPayment(
+    item: MonthlyExpense,
+    financialAccountId: string,
+    paymentDate: string,
+  ): Promise<boolean> {
+    if (this.busyIds().has(item.occurrenceId)) {
+      return false;
+    }
+    this.markBusy(item.occurrenceId, true);
+    this.submitting.set(true);
+    this.error.set(null);
+    try {
+      const result = await firstValueFrom(
+        this.api.registerPayment(item.occurrenceId, financialAccountId, paymentDate),
+      );
+      this.replaceItem(result.occurrence);
+      this.accounts.update((accounts) =>
+        accounts.map((account) =>
+          account.id === result.financialAccount.id
+            ? { ...account, currentBalance: result.updatedBalance }
+            : account,
+        ),
+      );
+      this.showNotice(
+        result.negativeBalance
+          ? 'Pagamento registrado. A conta ficou com saldo negativo.'
+          : 'Pagamento e movimentação registrados.',
+      );
+      return true;
+    } catch (error: unknown) {
+      this.error.set(this.errorMessage(error, 'Não foi possível registrar o pagamento.'));
+      return false;
+    } finally {
+      this.submitting.set(false);
       this.markBusy(item.occurrenceId, false);
     }
   }

@@ -37,7 +37,26 @@ export interface MonthlyExpense {
   category: string;
   status: PaymentStatus;
   paidAt: string | null;
+  financialAccountId: string | null;
+  financialAccountName: string | null;
   active: boolean;
+}
+
+export interface FixedExpensePaymentResult {
+  occurrence: MonthlyExpense;
+  payment: {
+    id: string;
+    balanceEffect: number;
+    occurredOn: string;
+  };
+  financialAccount: {
+    id: string;
+    name: string;
+    currentBalance: number;
+    active: boolean;
+  };
+  updatedBalance: number;
+  negativeBalance: boolean;
 }
 
 export interface MonthlySummary {

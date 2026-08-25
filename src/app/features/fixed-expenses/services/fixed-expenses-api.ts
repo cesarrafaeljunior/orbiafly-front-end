@@ -5,6 +5,7 @@ import { environment } from '../../../../environments/environment';
 import {
   Category,
   FixedExpense,
+  FixedExpensePaymentResult,
   FixedExpensePayload,
   MonthlyExpense,
   MonthlyExpensesResponse,
@@ -45,6 +46,17 @@ export class FixedExpensesApi {
     return this.http.patch<MonthlyExpense>(
       `${this.baseUrl}/fixed-expense-occurrences/${occurrenceId}/status`,
       { status },
+    );
+  }
+
+  registerPayment(
+    occurrenceId: string,
+    financialAccountId: string,
+    paymentDate: string,
+  ): Observable<FixedExpensePaymentResult> {
+    return this.http.post<FixedExpensePaymentResult>(
+      `${this.baseUrl}/fixed-expense-occurrences/${occurrenceId}/payment`,
+      { financialAccountId, paymentDate },
     );
   }
 }

@@ -12,15 +12,24 @@ src/
 └── styles.scss
 ```
 
-O projeto possui o shell da aplicacao e a feature `fixed-expenses`.
+O projeto possui o shell da aplicacao e as features `accounts`, `dashboard` e `fixed-expenses`.
 
 ## Estrutura futura desejada
 
 ```text
 src/app/
 └── features/
-    └── fixed-expenses/
+    ├── dashboard/
+    │   ├── models/
+    │   ├── pages/
+    │   ├── services/
+    │   └── testing/
+    ├── fixed-expenses/
         ├── components/
+        ├── models/
+        ├── pages/
+        └── services/
+    └── accounts/
         ├── models/
         ├── pages/
         └── services/

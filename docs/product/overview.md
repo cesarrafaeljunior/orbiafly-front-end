@@ -10,6 +10,10 @@ Orbiafly deve reduzir essa friccao com uma experiencia direta, visualmente limpa
 
 O primeiro fluxo implementado substitui o controle manual de despesas fixas mensais. Uma recorrencia cadastrada aparece nas competencias seguintes como pendente sem exigir reset.
 
+O usuario tambem pode cadastrar suas contas financeiras, acompanhar o saldo derivado das movimentacoes, ajustar divergencias e escolher a origem real ao pagar uma despesa fixa.
+
+O dashboard transforma esses dados em uma leitura direta: apresenta saldo disponivel, valores pagos e pendentes, atrasos, distribuicao por categoria, proximos vencimentos e maiores despesas. Ele ainda nao representa receitas, cartoes ou a vida financeira completa.
+
 ## Publico inicial
 
 O publico inicial e uma pessoa que deseja organizar as proprias financas sem complexidade de ERP, contabilidade avancada ou produto empresarial.

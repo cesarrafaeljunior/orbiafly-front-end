@@ -1,0 +1,244 @@
+<main class="dashboard-workspace">
+  <header class="dashboard-heading">
+    <div>
+      <p class="eyebrow">Visão financeira</p>
+      <h1>Dashboard</h1>
+    </div>
+    <section class="period-control" aria-label="Competência selecionada">
+      <button
+        type="button"
+        title="Mês anterior"
+        aria-label="Mês anterior"
+        (click)="store.moveMonth(-1)"
+      >
+        ‹
+      </button>
+      <div>
+        <span>Competência</span>
+        <strong>{{ store.periodLabel() }}</strong>
+      </div>
+      <button
+        type="button"
+        title="Próximo mês"
+        aria-label="Próximo mês"
+        (click)="store.moveMonth(1)"
+      >
+        ›
+      </button>
+    </section>
+  </header>
+
+  @if (store.error()) {
+    <section class="feedback" role="alert">
+      <div>
+        <strong>Não foi possível carregar a dashboard</strong>
+        <p>{{ store.error() }}</p>
+      </div>
+      <button class="secondary-button" type="button" (click)="store.initialize()">
+        Tentar novamente
+      </button>
+    </section>
+  } @else if (store.loading()) {
+    <section class="dashboard-loading" aria-live="polite" aria-label="Carregando dashboard">
+      <div class="loading-summary"></div>
+      <div class="loading-grid">
+        <div></div>
+        <div></div>
+      </div>
+    </section>
+  } @else if (store.dashboard(); as dashboard) {
+    <app-accounts-summary [accounts]="dashboard.accounts" />
+
+    @if (dashboard.summary.totalCount === 0) {
+      <section class="empty-state">
+        <span class="empty-state__mark" aria-hidden="true">0</span>
+        <h2>Nenhuma despesa em {{ store.periodLabel() }}.</h2>
+        <p>Cadastre suas despesas fixas para começar a acompanhar o mês.</p>
+        <a class="primary-link" routerLink="/despesas-fixas">Gerenciar despesas</a>
+      </section>
+    } @else {
+      <section class="summary-band" aria-label="Indicadores financeiros da competência">
+        <div class="summary-item">
+          <span>Total previsto</span>
+          <strong>{{
+            dashboard.summary.totalAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}</strong>
+          <small>
+            {{ dashboard.summary.totalCount }}
+            {{ dashboard.summary.totalCount === 1 ? 'despesa' : 'despesas' }}
+          </small>
+        </div>
+        <div class="summary-item summary-item--paid">
+          <span>Total pago</span>
+          <strong>{{
+            dashboard.summary.paidAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}</strong>
+          <small>
+            {{ dashboard.summary.paidCount }}
+            {{ dashboard.summary.paidCount === 1 ? 'paga' : 'pagas' }}
+          </small>
+        </div>
+        <div class="summary-item summary-item--pending">
+          <span>Total pendente</span>
+          <strong>{{
+            dashboard.summary.pendingAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}</strong>
+          <small>
+            {{ dashboard.summary.pendingCount }}
+            {{ dashboard.summary.pendingCount === 1 ? 'pendente' : 'pendentes' }}
+          </small>
+        </div>
+      </section>
+
+      <section class="insight-grid">
+        <article class="dashboard-section progress-section">
+          <header>
+            <div>
+              <p class="section-label">Progresso mensal</p>
+              <h2>{{ dashboard.summary.paidPercentage | number: '1.0-2' : 'pt-BR' }}% pago</h2>
+            </div>
+            <span>{{ dashboard.summary.paidCount }} de {{ dashboard.summary.totalCount }}</span>
+          </header>
+          <progress
+            max="100"
+            [value]="dashboard.summary.paidPercentage ?? 0"
+            [attr.aria-label]="(dashboard.summary.paidPercentage ?? 0) + '% do valor mensal pago'"
+          ></progress>
+          <p>
+            {{ dashboard.summary.paidAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+            de
+            {{ dashboard.summary.totalAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+          </p>
+        </article>
+
+        <article class="dashboard-section situation-section">
+          <header>
+            <div>
+              <p class="section-label">Situação</p>
+              <h2>Contas do mês</h2>
+            </div>
+            <a routerLink="/despesas-fixas">Ver despesas</a>
+          </header>
+          <div class="situation-counts">
+            <div>
+              <strong>{{ dashboard.summary.paidCount }}</strong
+              ><span>Pagas</span>
+            </div>
+            <div>
+              <strong>{{ dashboard.summary.pendingCount }}</strong
+              ><span>Pendentes</span>
+            </div>
+          </div>
+          <div class="overdue" [class.overdue--clear]="dashboard.overdue.count === 0">
+            @if (dashboard.overdue.count > 0) {
+              <strong
+                >{{ dashboard.overdue.count }}
+                {{ dashboard.overdue.count === 1 ? 'vencida' : 'vencidas' }}</strong
+              >
+              <span>{{
+                dashboard.overdue.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+              }}</span>
+            } @else {
+              <strong>Nenhuma conta vencida</strong>
+              <span>Pendências dentro do prazo</span>
+            }
+          </div>
+        </article>
+      </section>
+
+      <section class="detail-grid">
+        <article class="dashboard-section category-section">
+          <header>
+            <div>
+              <p class="section-label">Distribuição</p>
+              <h2>Gastos por categoria</h2>
+            </div>
+          </header>
+          <div class="category-chart" aria-label="Distribuição textual e visual por categoria">
+            @for (category of dashboard.categories; track category.categoryId) {
+              <div class="category-row">
+                <div class="category-row__label">
+                  <strong>{{ category.categoryName }}</strong>
+                  <span>{{
+                    category.totalAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+                  }}</span>
+                </div>
+                <div
+                  class="category-bar"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  [attr.aria-valuenow]="category.percentage ?? 0"
+                  [attr.aria-label]="
+                    category.categoryName + ': ' + (category.percentage ?? 0) + '% do total'
+                  "
+                >
+                  <span [style.width.%]="category.percentage ?? 0"></span>
+                </div>
+                <small>{{ category.percentage ?? 0 | number: '1.0-2' : 'pt-BR' }}%</small>
+              </div>
+            }
+          </div>
+        </article>
+
+        <article class="dashboard-section upcoming-section">
+          <header>
+            <div>
+              <p class="section-label">Agenda</p>
+              <h2>Próximos vencimentos</h2>
+            </div>
+          </header>
+          @if (dashboard.upcomingExpenses.length === 0) {
+            <p class="section-empty">Nenhum vencimento futuro pendente nesta competência.</p>
+          } @else {
+            <div class="expense-list">
+              @for (expense of dashboard.upcomingExpenses; track expense.occurrenceId) {
+                <div class="expense-item">
+                  <div>
+                    <strong>{{ expense.name }}</strong
+                    ><span>{{ expense.categoryName }}</span>
+                  </div>
+                  <time [attr.datetime]="expense.dueDate">{{
+                    expense.dueDate | date: 'dd/MM' : 'UTC' : 'pt-BR'
+                  }}</time>
+                  <strong>{{
+                    expense.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+                  }}</strong>
+                </div>
+              }
+            </div>
+          }
+        </article>
+      </section>
+
+      <section class="dashboard-section largest-section">
+        <header>
+          <div>
+            <p class="section-label">Impacto</p>
+            <h2>Maiores despesas do mês</h2>
+          </div>
+          <a routerLink="/despesas-fixas">Ver todas</a>
+        </header>
+        <div class="largest-list">
+          @for (
+            expense of dashboard.largestExpenses;
+            track expense.occurrenceId;
+            let position = $index
+          ) {
+            <div class="largest-item">
+              <span class="position">{{ position + 1 }}</span>
+              <div>
+                <strong>{{ expense.name }}</strong
+                ><span>{{ expense.categoryName }}</span>
+              </div>
+              <span class="status" [class.status--paid]="expense.status === 'PAID'">
+                {{ expense.status === 'PAID' ? 'Pago' : 'Pendente' }}
+              </span>
+              <strong>{{ expense.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  }
+</main>
