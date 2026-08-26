@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   ACCOUNT_TYPE_LABELS,
@@ -9,6 +9,14 @@ import {
 } from '../../models/account.models';
 import { AccountsStore } from '../../services/accounts-store';
 
+
+type AccountStatusFilter = 'ACTIVE' | 'INACTIVE' | 'ALL';
+
+type AccountSortOption =
+  | 'NAME_ASC'
+  | 'NAME_DESC'
+  | 'BALANCE_DESC'
+  | 'BALANCE_ASC';
 @Component({
   imports: [CurrencyPipe, DatePipe, ReactiveFormsModule],
   providers: [AccountsStore],
@@ -17,6 +25,9 @@ import { AccountsStore } from '../../services/accounts-store';
   templateUrl: './accounts-page.html',
 })
 export class AccountsPage implements OnInit {
+  protected readonly searchTerm = signal('');
+  protected readonly statusFilter = signal<AccountStatusFilter>('ACTIVE');
+  protected readonly sortOption = signal<AccountSortOption>('NAME_ASC');
   protected readonly store = inject(AccountsStore);
   protected readonly typeLabels = ACCOUNT_TYPE_LABELS;
   protected readonly accountTypes = Object.keys(ACCOUNT_TYPE_LABELS) as FinancialAccountType[];
@@ -24,6 +35,59 @@ export class AccountsPage implements OnInit {
   protected readonly editingAccount = signal<FinancialAccount | null>(null);
   protected readonly adjustingAccount = signal<FinancialAccount | null>(null);
   protected readonly deactivatingAccount = signal<FinancialAccount | null>(null);
+
+  protected readonly filteredAccounts = computed(() => {
+    const query = this.searchTerm()
+      .trim()
+      .toLocaleLowerCase('pt-BR');
+
+    const status = this.statusFilter();
+    const sort = this.sortOption();
+
+    const accounts = this.store.overview().accounts
+      .filter((account) => {
+        if (status === 'ACTIVE' && !account.active) {
+          return false;
+        }
+
+        if (status === 'INACTIVE' && account.active) {
+          return false;
+        }
+
+        if (!query) {
+          return true;
+        }
+
+        const searchable = [
+          account.name,
+          account.institution,
+          this.typeLabels[account.type],
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLocaleLowerCase('pt-BR');
+
+        return searchable.includes(query);
+      })
+      .sort((left, right) => {
+        switch (sort) {
+          case 'NAME_DESC':
+            return right.name.localeCompare(left.name, 'pt-BR');
+
+          case 'BALANCE_DESC':
+            return right.currentBalance - left.currentBalance;
+
+          case 'BALANCE_ASC':
+            return left.currentBalance - right.currentBalance;
+
+          case 'NAME_ASC':
+          default:
+            return left.name.localeCompare(right.name, 'pt-BR');
+        }
+      });
+
+    return accounts;
+  });
 
   protected readonly accountForm = new FormGroup({
     name: new FormControl('', {
@@ -55,8 +119,8 @@ export class AccountsPage implements OnInit {
     }),
   });
 
-  ngOnInit(): void {
-    void this.store.initialize();
+  async ngOnInit(): Promise<void> {
+    await this.store.initialize();
   }
 
   protected openCreate(): void {
@@ -71,6 +135,9 @@ export class AccountsPage implements OnInit {
   }
 
   protected openEdit(account: FinancialAccount): void {
+    if (!account.active) {
+      return;
+    }
     this.editingAccount.set(account);
     this.accountForm.reset({
       name: account.name,
@@ -107,6 +174,9 @@ export class AccountsPage implements OnInit {
   }
 
   protected openAdjustment(account: FinancialAccount): void {
+    if (!account.active) {
+      return;
+    }
     this.adjustingAccount.set(account);
     this.adjustmentForm.reset({
       targetBalance: account.currentBalance,
@@ -142,8 +212,22 @@ export class AccountsPage implements OnInit {
     }
   }
 
-  protected toggleInactive(event: Event): void {
-    void this.store.setIncludeInactive((event.target as HTMLInputElement).checked);
+  protected updateSearch(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.searchTerm.set(target.value);
+  }
+
+  protected async changeStatusFilter(filter: AccountStatusFilter): Promise<void> {
+    this.statusFilter.set(filter);
+
+    // ACTIVE pode continuar usando apenas as contas ativas.
+    // INACTIVE/ALL precisam pedir ao backend também as contas inativas.
+    await this.store.setIncludeInactive(filter !== 'ACTIVE');
+  }
+
+  protected changeSort(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.sortOption.set(target.value as AccountSortOption);
   }
 
   protected transactionLabel(type: string): string {
