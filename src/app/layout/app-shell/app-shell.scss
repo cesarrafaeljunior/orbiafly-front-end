@@ -1,0 +1,132 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+:host(.drawer-open) {
+  overflow: hidden;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  min-height: 100dvh;
+  background: var(--background);
+  transition: grid-template-columns 180ms ease;
+}
+
+.app-shell--collapsed {
+  grid-template-columns: var(--sidebar-collapsed-width) minmax(0, 1fr);
+}
+
+.desktop-sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 100dvh;
+  min-height: 0;
+}
+
+.main-content {
+  min-width: 0;
+  width: 100%;
+}
+
+.mobile-header,
+.drawer-backdrop {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .app-shell,
+  .app-shell--collapsed {
+    display: block;
+  }
+
+  .desktop-sidebar {
+    display: none;
+  }
+
+  .mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 64px;
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--background) 94%, transparent);
+    padding: 0 var(--space-4);
+    backdrop-filter: blur(12px);
+  }
+
+  .mobile-header button {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+
+  .mobile-header i {
+    font-size: 1.25rem;
+  }
+
+  .mobile-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--text-primary);
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .mobile-brand span {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--primary-light-blue);
+    border-radius: var(--radius-sm);
+    background: var(--primary-dark-green);
+    color: var(--primary-light-blue);
+  }
+
+  .drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: block;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--background) 78%, transparent);
+    backdrop-filter: blur(2px);
+  }
+
+  .drawer-panel {
+    height: 100%;
+    animation: drawer-enter 180ms ease-out;
+  }
+}
+
+@keyframes drawer-enter {
+  from {
+    transform: translateX(-18px);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell,
+  .drawer-panel {
+    animation: none;
+    transition: none;
+  }
+}

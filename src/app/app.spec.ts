@@ -16,13 +16,13 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render the product navigation', async () => {
+  it('should render the app shell navigation', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.brand')?.textContent).toContain('Orbiafly');
-    expect(compiled.querySelector('nav')?.textContent).toContain('Dashboard');
-    expect(compiled.querySelector('nav')?.textContent).toContain('Despesas fixas');
-    expect(compiled.querySelector('nav')?.textContent).toContain('Contas');
+    expect(compiled.querySelector('.sidebar__nav')?.textContent).toContain('Dashboard');
+    expect(compiled.querySelector('.sidebar__nav')?.textContent).toContain('Despesas fixas');
+    expect(compiled.querySelector('.sidebar__nav')?.textContent).toContain('Contas');
   });
 });

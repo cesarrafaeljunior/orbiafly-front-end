@@ -1,0 +1,41 @@
+<section class="toast-region" aria-label="Notificações" aria-live="polite" aria-atomic="false">
+  @for (message of toastService.messages(); track message.id) {
+    <article
+      class="toast"
+      [class.toast--success]="message.type === 'success'"
+      [class.toast--error]="message.type === 'error'"
+      [class.toast--warning]="message.type === 'warning'"
+      [class.toast--info]="message.type === 'info'"
+      [class.toast--paused]="message.paused"
+      role="status"
+      (mouseenter)="toastService.pause(message.id)"
+      (mouseleave)="toastService.resume(message.id)"
+      (focusin)="toastService.pause(message.id)"
+      (focusout)="toastService.resume(message.id)"
+    >
+      <i class="ph {{ iconFor(message) }}" aria-hidden="true"></i>
+
+      <div class="toast__content">
+        @if (message.title) {
+          <strong>{{ message.title }}</strong>
+        }
+
+        <p>{{ message.message }}</p>
+      </div>
+
+      <button
+        type="button"
+        aria-label="Fechar notificação"
+        (click)="toastService.dismiss(message.id)"
+      >
+        <i class="ph ph-x" aria-hidden="true"></i>
+      </button>
+
+      @if (message.duration && message.remaining) {
+        <span class="toast__timer" aria-hidden="true">
+          <span [style.animation-duration.ms]="message.remaining"></span>
+        </span>
+      }
+    </article>
+  }
+</section>

@@ -24,7 +24,7 @@ describe('ExpenseForm', () => {
     expect(element.textContent).toContain('Informe um nome');
 
     setInput(element, 'input[formControlName="name"]', 'Energia');
-    setInput(element, 'input[formControlName="defaultAmount"]', '200');
+    setInput(element, 'input[formControlName="defaultAmount"]', '20000');
     setInput(element, 'input[formControlName="dueDay"]', '18');
     setInput(element, 'select[formControlName="categoryId"]', 'category-home');
     form.dispatchEvent(new Event('submit'));
@@ -61,7 +61,7 @@ describe('ExpenseForm', () => {
     );
     expect(
       (element.querySelector('input[formControlName="defaultAmount"]') as HTMLInputElement).value,
-    ).toBe('89.9');
+    ).toBe('R$ 89,90');
     expect(
       (element.querySelector('input[formControlName="active"]') as HTMLInputElement).checked,
     ).toBe(false);

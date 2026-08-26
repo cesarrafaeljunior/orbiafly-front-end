@@ -1,9 +1,10 @@
 import { Component, effect, inject, input, output } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CurrencyMaskDirective } from '../../../../shared/directives/currency-mask.directive';
 import { Category, FixedExpensePayload, MonthlyExpense } from '../../models/fixed-expense.models';
 
 @Component({
-  imports: [ReactiveFormsModule],
+  imports: [CurrencyMaskDirective, ReactiveFormsModule],
   selector: 'app-expense-form',
   styleUrl: './expense-form.scss',
   templateUrl: './expense-form.html',

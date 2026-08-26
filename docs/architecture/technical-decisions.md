@@ -137,3 +137,35 @@ Registro leve de decisoes arquiteturais do Orbiafly. Nao e necessario seguir um 
 - Motivo: evitar hardcode e facilitar consistencia visual.
 - Consequencias: novas cores ou estilos devem atualizar `docs/design`.
 - Status: aceita.
+
+## Shell com sidebar responsiva
+
+- Decisao: usar `AppShell` com sidebar expandida por padrao no desktop, recolhivel por preferencia local, e drawer acionado por hamburger no mobile.
+- Contexto: a navegacao por header horizontal nao escala para novos modulos financeiros.
+- Motivo: permitir crescimento da navegacao sem redesenhar o topo a cada feature.
+- Consequencias: paginas ficam dentro de `main-content`, a marca migra para a sidebar e nao deve haver navegacao principal duplicada no header.
+- Status: aceita.
+
+## Largura operacional ampliada
+
+- Decisao: usar `--page-max-width: 1600px` como limite inicial para paginas operacionais.
+- Contexto: o layout anterior ocupava uma fracao pequena de telas Full HD.
+- Motivo: permitir que grids e modulos usem melhor a largura disponivel sem inflar cards individuais.
+- Consequencias: novas telas devem preferir grids responsivos e containers fluidos em vez de limites estreitos fixos.
+- Status: aceita.
+
+## Toast global
+
+- Decisao: concentrar notificacoes em `ToastService` e `ToastContainer` global.
+- Contexto: contas e despesas fixas renderizavam toasts locais de forma duplicada.
+- Motivo: padronizar tipos, posicao, duracao, icones, fechamento manual e pausa do tempo de leitura.
+- Consequencias: erros estruturais de carregamento continuam inline; resultados de acoes usam toast global com temporizador visual pausavel em hover ou foco.
+- Status: aceita.
+
+## Mascara monetaria compartilhada
+
+- Decisao: usar uma diretiva compartilhada para formatar entradas monetarias em `pt-BR`/`BRL` durante a digitacao.
+- Contexto: formularios de contas e despesas precisam receber valores monetarios de forma consistente.
+- Motivo: evitar conversoes manuais por componente e manter o valor dos formularios como numero para os contratos atuais.
+- Consequencias: campos monetarios digitaveis devem usar a diretiva em vez de `type="number"`; valores negativos so devem ser habilitados quando fizerem sentido para o dominio.
+- Status: aceita.

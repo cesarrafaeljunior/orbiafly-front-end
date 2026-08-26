@@ -1,6 +1,7 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CurrencyMaskDirective } from '../../../../shared/directives/currency-mask.directive';
 import { ExpenseForm } from '../../components/expense-form/expense-form';
 import { PaymentForm, PaymentPayload } from '../../components/payment-form/payment-form';
 import {
@@ -11,7 +12,7 @@ import {
 import { FixedExpensesStore } from '../../services/fixed-expenses-store';
 
 @Component({
-  imports: [CurrencyPipe, ExpenseForm, PaymentForm, ReactiveFormsModule],
+  imports: [CurrencyMaskDirective, CurrencyPipe, ExpenseForm, PaymentForm, ReactiveFormsModule],
   providers: [FixedExpensesStore],
   selector: 'app-fixed-expenses-page',
   styleUrl: './fixed-expenses-page.scss',

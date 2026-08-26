@@ -2,25 +2,17 @@
   <header class="page-heading">
     <div>
       <h1>Contas</h1>
-      <p class="page-description">
-        Acompanhe onde está seu saldo e como ele se movimentou.
-      </p>
+      <p class="page-description">Acompanhe onde está seu saldo e como ele se movimentou.</p>
     </div>
-
-    <button class="button button--primary" type="button" (click)="openCreate()">
-      <span aria-hidden="true">+</span>
-      Nova conta
-    </button>
   </header>
-
+  @if (store.overview().accounts.length > 0) {
   <section class="accounts-toolbar">
     <div class="accounts-overview">
       <span>Saldo disponível total</span>
 
       <strong>
         {{
-        store.overview().totalAvailableBalance
-        | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+        store.overview().totalAvailableBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
         }}
       </strong>
 
@@ -32,7 +24,7 @@
 
     <div class="accounts-controls">
       <div class="account-search">
-        <span class="account-search__icon" aria-hidden="true">⌕</span>
+        <i class="ph ph-magnifying-glass account-search__icon" aria-hidden="true"></i>
 
         <input type="search" aria-label="Buscar contas" placeholder="Buscar contas..." [value]="searchTerm()"
           (input)="updateSearch($event)" />
@@ -69,7 +61,7 @@
       </label>
     </div>
   </section>
-
+  }
   @if (store.error()) {
   <section class="feedback" role="alert">
     <div>
@@ -90,16 +82,19 @@
   </section>
   } @else if (store.overview().accounts.length === 0) {
   <section class="empty-state">
-    <span aria-hidden="true">R$</span>
+    <div class="empty-state__icon" aria-hidden="true">
+      <i class="ph ph-wallet"></i>
+    </div>
 
-    <h2>Você ainda não possui contas cadastradas.</h2>
+    <div class="empty-state__content">
+      <h2>Nenhuma conta cadastrada</h2>
 
-    <p>
-      Cadastre onde seu dinheiro está para começar a acompanhar seus saldos.
-    </p>
+      <p>Cadastre sua primeira conta para acompanhar seus saldos e movimentações.</p>
+    </div>
 
     <button class="button button--primary" type="button" (click)="openCreate()">
-      Cadastrar conta
+      <i class="ph ph-plus"></i>
+      Adicionar conta
     </button>
   </section>
   } @else if (filteredAccounts().length === 0) {
@@ -108,9 +103,7 @@
 
     <h2>Nenhuma conta encontrada</h2>
 
-    <p>
-      Nenhuma conta corresponde à busca ou aos filtros selecionados.
-    </p>
+    <p>Nenhuma conta corresponde à busca ou aos filtros selecionados.</p>
   </section>
   } @else {
   <section class="accounts-grid" aria-label="Contas financeiras">
@@ -119,7 +112,7 @@
       <header class="account-card__header">
         <div class="account-identity">
           <div class="account-avatar" aria-hidden="true">
-            {{ account.name.charAt(0).toUpperCase() }}
+            <i class="ph ph-bank"></i>
           </div>
 
           <div>
@@ -132,49 +125,77 @@
         </div>
 
         <span class="account-status" [class.account-status--inactive]="!account.active">
+          <i class="ph" [class.ph-check-circle]="account.active" [class.ph-pause-circle]="!account.active"
+            aria-hidden="true"></i>
+
           {{ account.active ? 'Ativa' : 'Inativa' }}
         </span>
       </header>
 
       <div class="account-balance">
         <span>
-          {{ account.active ? 'Saldo atual' : 'Saldo final' }}
+          {{ account.active ? 'Saldo atual' : 'Último saldo' }}
         </span>
 
         <strong>
-          {{
-          account.currentBalance
-          | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
-          }}
+          {{ account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
         </strong>
 
         <small>{{ typeLabels[account.type] }}</small>
       </div>
 
-      <footer>
-        <button type="button" (click)="store.openTransactions(account)">
+      <footer class="account-card__actions">
+        <button class="action-button account-action account-action--primary" type="button"
+          (click)="store.openTransactions(account)">
+          <i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i>
           Movimentações
         </button>
 
         @if (account.active) {
-        <button type="button" (click)="openEdit(account)">
-          Editar
-        </button>
+        <div class="account-card__secondary-actions">
+          <button class="action-button account-action" type="button" (click)="openEdit(account)">
+            <i class="ph ph-pencil-simple" aria-hidden="true"></i>
+            Editar
+          </button>
 
-        <button type="button" (click)="openAdjustment(account)">
-          Ajustar saldo
-        </button>
+          <button class="action-button account-action" type="button" (click)="openAdjustment(account)">
+            <i class="ph ph-sliders-horizontal" aria-hidden="true"></i>
+            Ajustar saldo
+          </button>
 
-        <button class="danger-action" type="button" (click)="deactivatingAccount.set(account)">
-          Desativar
-        </button>
+          <button class="action-button action-button--danger account-action" type="button"
+            (click)="deactivatingAccount.set(account)">
+            <i class="ph ph-power" aria-hidden="true"></i>
+            Desativar
+          </button>
+        </div>
         } @else {
-        <span class="inactive-account-message">
-          Conta inativa
-        </span>
+        <div class="account-card__secondary-actions">
+          <button class="action-button account-action" type="button" (click)="store.reactivate(account)">
+            <i class="ph ph-arrow-clockwise" aria-hidden="true"></i>
+            Reativar
+          </button>
+
+          <button class="action-button action-button--danger account-action" type="button"
+            (click)="deletingAccount.set(account)">
+            <i class="ph ph-trash" aria-hidden="true"></i>
+            Excluir
+          </button>
+        </div>
         }
       </footer>
     </article>
+    }
+    @if (statusFilter() !== 'INACTIVE') {
+    <button class="new-account-card" type="button" (click)="openCreate()">
+      <div class="new-account-card__icon">
+        <i class="ph ph-plus"></i>
+      </div>
+
+      <strong>Adicionar nova conta</strong>
+
+      <small> Cadastre uma nova conta financeira para acompanhar seu saldo. </small>
+    </button>
     }
   </section>
   }
@@ -264,13 +285,10 @@
       @if (!editingAccount()) {
       <label>
         <span>Saldo inicial</span>
-        <input formControlName="openingBalance" type="number" step="0.01" inputmode="decimal" />
+        <input appCurrencyMask [appCurrencyAllowNegative]="true" formControlName="openingBalance" type="text"
+          inputmode="decimal" />
         <small class="field-help">Valor existente quando a conta entra no Orbiafly.</small>
       </label>
-      } @else {
-      <p class="form-note">
-        O saldo não é alterado nesta edição. Use Ajustar saldo para registrar uma correção.
-      </p>
       }
       <footer>
         <button class="button button--secondary" type="button" (click)="closeAccountForm()">
@@ -307,7 +325,8 @@
       </div>
       <label>
         <span>Saldo real</span>
-        <input formControlName="targetBalance" type="number" step="0.01" inputmode="decimal" />
+        <input appCurrencyMask [appCurrencyAllowNegative]="true" formControlName="targetBalance" type="text"
+          inputmode="decimal" />
       </label>
       <div class="adjustment-difference">
         <span>Diferença registrada</span>
@@ -352,6 +371,23 @@
 </div>
 }
 
-@if (store.notice()) {
-<div class="toast" role="status">{{ store.notice() }}</div>
+@if (deletingAccount(); as account) {
+<div class="modal-backdrop" (mousedown)="deletingAccount.set(null)">
+  <section class="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-title"
+    (mousedown)="$event.stopPropagation()">
+    <h2 id="delete-title">Excluir {{ account.name }}?</h2>
+    <p>
+      A conta será removida da sua visualização e não poderá mais ser utilizada.
+      O histórico financeiro relacionado a ela será preservado.
+    </p>
+    <footer>
+      <button class="button button--secondary" type="button" (click)="deletingAccount.set(null)">
+        Cancelar
+      </button>
+      <button class="button button--danger" type="button" (click)="confirmDeletion()">
+        Excluir conta
+      </button>
+    </footer>
+  </section>
+</div>
 }

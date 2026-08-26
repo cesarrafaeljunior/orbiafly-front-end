@@ -6,6 +6,7 @@ import { MonthlyExpense } from '../models/fixed-expense.models';
 import { FixedExpensesApi } from './fixed-expenses-api';
 import { FixedExpensesStore } from './fixed-expenses-store';
 import { AccountsApi } from '../../accounts/services/accounts-api';
+import { ToastService } from '../../../shared/services/toast.service';
 
 const pendingExpense: MonthlyExpense = {
   occurrenceId: 'occurrence-1',
@@ -47,6 +48,12 @@ describe('FixedExpensesStore', () => {
   };
   const accountsApi = {
     getOverview: vi.fn(),
+  };
+  const toastService = {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
   };
   let store: FixedExpensesStore;
 
@@ -96,6 +103,7 @@ describe('FixedExpensesStore', () => {
         FixedExpensesStore,
         { provide: FixedExpensesApi, useValue: api },
         { provide: AccountsApi, useValue: accountsApi },
+        { provide: ToastService, useValue: toastService },
       ],
     });
     store = TestBed.inject(FixedExpensesStore);
@@ -152,6 +160,7 @@ describe('FixedExpensesStore', () => {
     await store.toggleStatus(pendingExpense);
     expect(store.items()[0].status).toBe('PAID');
     expect(store.summary().paidTotal).toBe(247.82);
+    expect(toastService.success).toHaveBeenCalledWith('Pagamento registrado.');
 
     const paid = store.items()[0];
     api.updateStatus.mockReturnValue(
@@ -166,7 +175,7 @@ describe('FixedExpensesStore', () => {
 
     await store.toggleStatus(paid);
     expect(store.items()[0].status).toBe('PAID');
-    expect(store.error()).toBe('Falha simulada.');
+    expect(toastService.error).toHaveBeenCalledWith('Falha simulada.');
   });
 
   it('registers a payment against an account and exposes a negative balance warning', async () => {
@@ -202,7 +211,9 @@ describe('FixedExpensesStore', () => {
     expect(api.registerPayment).toHaveBeenCalledWith('occurrence-1', 'account-1', '2026-08-18');
     expect(store.items()[0].financialAccountName).toBe('Conta principal');
     expect(store.accounts()[0].currentBalance).toBe(-10);
-    expect(store.notice()).toContain('saldo negativo');
+    expect(toastService.warning).toHaveBeenCalledWith(
+      'Pagamento registrado. A conta ficou com saldo negativo.',
+    );
   });
 
   it('exposes a useful error when the monthly request fails', async () => {

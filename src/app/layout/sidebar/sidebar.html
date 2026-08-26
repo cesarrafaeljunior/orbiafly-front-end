@@ -1,0 +1,81 @@
+<aside class="sidebar" [class.sidebar--collapsed]="collapsed()" [class.sidebar--drawer]="drawer()">
+  <header class="sidebar__brand">
+    <a
+      class="brand"
+      routerLink="/dashboard"
+      aria-label="Orbiafly - início"
+      (click)="closeRequested.emit()"
+    >
+      <span class="brand__mark" aria-hidden="true">O</span>
+      @if (!collapsed()) {
+        <span class="brand__name">Orbiafly</span>
+      }
+    </a>
+
+    @if (drawer()) {
+      <button
+        class="sidebar__icon-button"
+        type="button"
+        aria-label="Fechar menu"
+        (click)="closeRequested.emit()"
+      >
+        <i class="ph ph-x" aria-hidden="true"></i>
+      </button>
+    } @else {
+      <button
+        class="sidebar__icon-button"
+        type="button"
+        [attr.aria-label]="collapsed() ? 'Expandir menu' : 'Recolher menu'"
+        [title]="collapsed() ? 'Expandir menu' : 'Recolher menu'"
+        (click)="toggleRequested.emit()"
+      >
+        <i
+          class="ph"
+          [class.ph-caret-right]="collapsed()"
+          [class.ph-sidebar-simple]="!collapsed()"
+          aria-hidden="true"
+        ></i>
+      </button>
+    }
+  </header>
+
+  <nav class="sidebar__nav" aria-label="Navegação principal">
+    @for (group of navigationGroups; track group.label) {
+      <section class="sidebar__group">
+        @if (!collapsed()) {
+          <span class="sidebar__group-label">{{ group.label }}</span>
+        }
+
+        <div class="sidebar__links">
+          @for (item of group.items; track item.path) {
+            <a
+              class="sidebar__link"
+              [routerLink]="item.path"
+              routerLinkActive="sidebar__link--active"
+              [routerLinkActiveOptions]="{ exact: true }"
+              [title]="collapsed() ? item.label : null"
+              (click)="closeRequested.emit()"
+            >
+              <i class="ph {{ item.icon }}" aria-hidden="true"></i>
+              @if (!collapsed()) {
+                <span>{{ item.label }}</span>
+              }
+            </a>
+          }
+        </div>
+      </section>
+    }
+  </nav>
+
+  <footer class="sidebar__user">
+    <button type="button" title="Minha conta">
+      <i class="ph ph-user-circle" aria-hidden="true"></i>
+      @if (!collapsed()) {
+        <span>
+          <strong>Usuário</strong>
+          <small>Minha conta</small>
+        </span>
+      }
+    </button>
+  </footer>
+</aside>

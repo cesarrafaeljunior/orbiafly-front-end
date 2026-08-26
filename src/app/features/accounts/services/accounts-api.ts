@@ -41,6 +41,14 @@ export class AccountsApi {
     return this.http.patch<FinancialAccount>(`${this.baseUrl}/${id}/deactivate`, {});
   }
 
+  reactivate(id: string): Observable<FinancialAccount> {
+    return this.http.patch<FinancialAccount>(`${this.baseUrl}/${id}/reactivate`, {});
+  }
+
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
   getTransactions(id: string): Observable<FinancialTransaction[]> {
     return this.http.get<FinancialTransaction[]>(`${this.baseUrl}/${id}/transactions`);
   }

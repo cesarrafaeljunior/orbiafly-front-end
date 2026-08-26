@@ -10,6 +10,9 @@ O Orbiafly deve ter uma interface predominantemente escura, moderna, minimalista
 - Layout responsivo para desktop e mobile.
 - Hierarquia visual clara para valores, resumos e acoes.
 - Uso moderado de cor para orientar significado.
+- Navegacao principal escalavel em sidebar no desktop e drawer no mobile.
+- Em telas largas, grids e modulos devem aproveitar a largura disponivel com limites confortaveis, evitando composicoes presas no centro.
+- Toasts devem ser compactos, centralizados, com icone semantico e temporizador visual pausavel em hover ou foco.
 
 ## Uso de cor
 
@@ -24,6 +27,7 @@ O Orbiafly deve ter uma interface predominantemente escura, moderna, minimalista
 - Estados de focus devem ser sempre visiveis.
 - Estados disabled devem comunicar indisponibilidade sem perder legibilidade.
 - Interfaces devem ser navegaveis por teclado.
+- Acoes destrutivas ou de risco devem usar `error`, nao acentos informativos.
 
 ## Acessibilidade
 

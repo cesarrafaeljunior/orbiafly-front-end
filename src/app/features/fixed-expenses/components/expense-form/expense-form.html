@@ -43,16 +43,7 @@
       <div class="field-grid">
         <label class="field">
           <span>Valor padrão</span>
-          <div class="money-input">
-            <span>R$</span>
-            <input
-              formControlName="defaultAmount"
-              type="number"
-              min="0"
-              step="0.01"
-              inputmode="decimal"
-            />
-          </div>
+          <input appCurrencyMask formControlName="defaultAmount" type="text" inputmode="decimal" />
           @if (form.controls.defaultAmount.touched && form.controls.defaultAmount.invalid) {
             <small>Informe um valor igual ou maior que zero.</small>
           }

@@ -20,6 +20,8 @@ src/app/
 
 `layout` deve conter estruturas de composicao visual da aplicacao, como shells, navegacao e regioes persistentes. Layout nao deve decidir regras financeiras.
 
+O shell principal fica em `layout/app-shell` e compoe sidebar, conteudo roteado e regioes globais. A sidebar fica expandida por padrao no desktop, pode ser recolhida com preferencia persistida em `localStorage` e vira drawer acionado por hamburger no mobile. Notificacoes globais ficam em `shared/components/toast-container` e sao emitidas por `shared/services/toast.service`.
+
 `features` deve concentrar funcionalidades por dominio, com baixo acoplamento entre elas.
 
 ## Features implementadas
@@ -33,6 +35,8 @@ O store coordena estado remoto, filtros locais, competencia e pagamentos. O back
 `features/dashboard` concentra o contrato mensal, cliente HTTP, store com Signals e pagina do dashboard. A rota `/dashboard` e lazy-loaded e tambem e o destino inicial da aplicacao.
 
 O dashboard exibe as agregacoes prontas recebidas de `/api/v1/dashboard/monthly`, incluindo saldo e contas ativas. O frontend apenas formata e organiza os dados; regras de saldo, atraso, percentuais, ordenacao e limites permanecem no backend.
+
+Paginas de feature devem usar a area disponivel do shell sem voltar a limitar o conteudo ao padrao antigo de 1180px. O limite visual atual fica em `--page-max-width`, permitindo que grids e modulos ocupem melhor telas Full HD sem esticar cards isolados.
 
 ## Features futuras
 

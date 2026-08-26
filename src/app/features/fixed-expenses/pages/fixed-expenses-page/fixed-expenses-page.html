@@ -251,13 +251,7 @@
         </div>
         <label class="amount-field">
           <span>Valor desta competência</span>
-          <input
-            [formControl]="monthlyAmount"
-            type="number"
-            min="0"
-            step="0.01"
-            inputmode="decimal"
-          />
+          <input appCurrencyMask [formControl]="monthlyAmount" type="text" inputmode="decimal" />
           @if (monthlyAmount.touched && monthlyAmount.invalid) {
             <small>Informe um valor igual ou maior que zero.</small>
           }
@@ -284,8 +278,4 @@
     (confirmed)="confirmPayment($event)"
     (cancelled)="closePayment()"
   />
-}
-
-@if (store.notice()) {
-  <div class="toast" role="status">{{ store.notice() }}</div>
 }

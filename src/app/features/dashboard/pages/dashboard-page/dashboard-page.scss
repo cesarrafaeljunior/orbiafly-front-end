@@ -3,7 +3,7 @@
 }
 
 .dashboard-workspace {
-  width: min(100% - 48px, 1180px);
+  width: min(100% - 48px, var(--page-max-width));
   margin: 0 auto;
   padding: var(--space-8) 0 var(--space-12);
 }
@@ -415,7 +415,7 @@ progress::-moz-progress-bar {
 
 @media (max-width: 760px) {
   .dashboard-workspace {
-    width: min(100% - 32px, 1180px);
+    width: min(100% - 32px, var(--page-max-width));
     padding-top: var(--space-6);
   }
 

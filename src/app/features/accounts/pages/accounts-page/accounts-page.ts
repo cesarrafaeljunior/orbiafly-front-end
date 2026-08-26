@@ -8,17 +8,13 @@ import {
   FinancialAccountType,
 } from '../../models/account.models';
 import { AccountsStore } from '../../services/accounts-store';
-
+import { CurrencyMaskDirective } from '../../../../shared/directives/currency-mask.directive';
 
 type AccountStatusFilter = 'ACTIVE' | 'INACTIVE' | 'ALL';
 
-type AccountSortOption =
-  | 'NAME_ASC'
-  | 'NAME_DESC'
-  | 'BALANCE_DESC'
-  | 'BALANCE_ASC';
+type AccountSortOption = 'NAME_ASC' | 'NAME_DESC' | 'BALANCE_DESC' | 'BALANCE_ASC';
 @Component({
-  imports: [CurrencyPipe, DatePipe, ReactiveFormsModule],
+  imports: [CurrencyMaskDirective, CurrencyPipe, DatePipe, ReactiveFormsModule],
   providers: [AccountsStore],
   selector: 'app-accounts-page',
   styleUrl: './accounts-page.scss',
@@ -35,17 +31,17 @@ export class AccountsPage implements OnInit {
   protected readonly editingAccount = signal<FinancialAccount | null>(null);
   protected readonly adjustingAccount = signal<FinancialAccount | null>(null);
   protected readonly deactivatingAccount = signal<FinancialAccount | null>(null);
+  protected readonly deletingAccount = signal<FinancialAccount | null>(null);
 
   protected readonly filteredAccounts = computed(() => {
-    const query = this.searchTerm()
-      .trim()
-      .toLocaleLowerCase('pt-BR');
+    const query = this.searchTerm().trim().toLocaleLowerCase('pt-BR');
 
     const status = this.statusFilter();
     const sort = this.sortOption();
 
-    const accounts = this.store.overview().accounts
-      .filter((account) => {
+    const accounts = this.store
+      .overview()
+      .accounts.filter((account) => {
         if (status === 'ACTIVE' && !account.active) {
           return false;
         }
@@ -58,11 +54,7 @@ export class AccountsPage implements OnInit {
           return true;
         }
 
-        const searchable = [
-          account.name,
-          account.institution,
-          this.typeLabels[account.type],
-        ]
+        const searchable = [account.name, account.institution, this.typeLabels[account.type]]
           .filter(Boolean)
           .join(' ')
           .toLocaleLowerCase('pt-BR');
@@ -209,6 +201,13 @@ export class AccountsPage implements OnInit {
     const account = this.deactivatingAccount();
     if (account && (await this.store.deactivate(account))) {
       this.deactivatingAccount.set(null);
+    }
+  }
+
+  protected async confirmDeletion(): Promise<void> {
+    const account = this.deletingAccount();
+    if (account && (await this.store.delete(account))) {
+      this.deletingAccount.set(null);
     }
   }
 

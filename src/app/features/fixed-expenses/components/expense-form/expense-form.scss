@@ -106,24 +106,6 @@ select:focus,
   outline-offset: 2px;
 }
 
-.money-input {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-}
-
-.money-input span {
-  padding-left: var(--space-3);
-  color: var(--text-muted);
-}
-
-.money-input input {
-  border: 0;
-}
-
 .field small {
   color: var(--error);
   font-weight: 500;

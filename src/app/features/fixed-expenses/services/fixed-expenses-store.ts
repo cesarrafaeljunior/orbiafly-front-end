@@ -11,6 +11,7 @@ import {
   MonthlyExpense,
   PaymentStatus,
 } from '../models/fixed-expense.models';
+import { ToastService } from '../../../shared/services/toast.service';
 import { FixedExpensesApi } from './fixed-expenses-api';
 
 const monthFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -23,6 +24,7 @@ const monthFormatter = new Intl.DateTimeFormat('pt-BR', {
 export class FixedExpensesStore {
   private readonly api = inject(FixedExpensesApi);
   private readonly accountsApi = inject(AccountsApi);
+  private readonly toastService = inject(ToastService);
   private requestSequence = 0;
 
   readonly currentDate = new Date();
@@ -34,7 +36,6 @@ export class FixedExpensesStore {
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
-  readonly notice = signal<string | null>(null);
   readonly busyIds = signal<ReadonlySet<string>>(new Set());
   readonly statusFilter = signal<ExpenseStatusFilter>('ALL');
   readonly categoryFilter = signal('ALL');
@@ -178,12 +179,12 @@ export class FixedExpensesStore {
       if (nextStatus === 'PENDING' && item.financialAccountId) {
         await this.loadAccounts();
       }
-      this.showNotice(
+      this.toastService.success(
         nextStatus === 'PAID' ? 'Pagamento registrado.' : 'Pagamento voltou para pendente.',
       );
     } catch (error: unknown) {
       this.items.set(previousItems);
-      this.error.set(this.errorMessage(error, 'Não foi possível alterar o pagamento.'));
+      this.toastService.error(this.errorMessage(error, 'Não foi possível alterar o pagamento.'));
     } finally {
       this.markBusy(item.occurrenceId, false);
     }
@@ -212,14 +213,14 @@ export class FixedExpensesStore {
             : account,
         ),
       );
-      this.showNotice(
-        result.negativeBalance
-          ? 'Pagamento registrado. A conta ficou com saldo negativo.'
-          : 'Pagamento e movimentação registrados.',
-      );
+      if (result.negativeBalance) {
+        this.toastService.warning('Pagamento registrado. A conta ficou com saldo negativo.');
+      } else {
+        this.toastService.success('Pagamento e movimentação registrados.');
+      }
       return true;
     } catch (error: unknown) {
-      this.error.set(this.errorMessage(error, 'Não foi possível registrar o pagamento.'));
+      this.toastService.error(this.errorMessage(error, 'Não foi possível registrar o pagamento.'));
       return false;
     } finally {
       this.submitting.set(false);
@@ -242,10 +243,10 @@ export class FixedExpensesStore {
     this.error.set(null);
     try {
       await action();
-      this.showNotice(successMessage);
+      this.toastService.success(successMessage);
       return true;
     } catch (error: unknown) {
-      this.error.set(this.errorMessage(error, fallbackError));
+      this.toastService.error(this.errorMessage(error, fallbackError));
       return false;
     } finally {
       this.submitting.set(false);
@@ -268,15 +269,6 @@ export class FixedExpensesStore {
       }
       return next;
     });
-  }
-
-  private showNotice(message: string): void {
-    this.notice.set(message);
-    window.setTimeout(() => {
-      if (this.notice() === message) {
-        this.notice.set(null);
-      }
-    }, 3500);
   }
 
   private errorMessage(error: unknown, fallback: string): string {

@@ -8,6 +8,7 @@ import {
   FinancialAccountsOverview,
   FinancialTransaction,
 } from '../models/account.models';
+import { ToastService } from '../../../shared/services/toast.service';
 import { AccountsApi } from './accounts-api';
 
 const EMPTY_OVERVIEW: FinancialAccountsOverview = {
@@ -19,6 +20,7 @@ const EMPTY_OVERVIEW: FinancialAccountsOverview = {
 @Injectable()
 export class AccountsStore {
   private readonly api = inject(AccountsApi);
+  private readonly toastService = inject(ToastService);
 
   readonly overview = signal<FinancialAccountsOverview>(EMPTY_OVERVIEW);
   readonly transactions = signal<FinancialTransaction[]>([]);
@@ -28,7 +30,6 @@ export class AccountsStore {
   readonly loadingTransactions = signal(false);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
-  readonly notice = signal<string | null>(null);
 
   readonly selectedAccount = computed(
     () =>
@@ -94,6 +95,31 @@ export class AccountsStore {
     );
   }
 
+  async reactivate(account: FinancialAccount): Promise<boolean> {
+    return this.runSubmission(
+      async () => {
+        await firstValueFrom(this.api.reactivate(account.id));
+        await this.loadAccounts();
+      },
+      'Conta reativada. O histórico foi preservado.',
+      'Não foi possível reativar a conta.',
+    );
+  }
+
+  async delete(account: FinancialAccount): Promise<boolean> {
+    return this.runSubmission(
+      async () => {
+        await firstValueFrom(this.api.delete(account.id));
+        if (this.selectedAccountId() === account.id) {
+          this.closeTransactions();
+        }
+        await this.loadAccounts();
+      },
+      'Conta excluída definitivamente.',
+      'Não foi possível excluir a conta.',
+    );
+  }
+
   async openTransactions(account: FinancialAccount): Promise<void> {
     this.selectedAccountId.set(account.id);
     this.loadingTransactions.set(true);
@@ -101,7 +127,9 @@ export class AccountsStore {
     try {
       this.transactions.set(await firstValueFrom(this.api.getTransactions(account.id)));
     } catch (error: unknown) {
-      this.error.set(this.errorMessage(error, 'Não foi possível carregar as movimentações.'));
+      this.toastService.error(
+        this.errorMessage(error, 'Não foi possível carregar as movimentações.'),
+      );
     } finally {
       this.loadingTransactions.set(false);
     }
@@ -139,23 +167,14 @@ export class AccountsStore {
     this.error.set(null);
     try {
       await action();
-      this.showNotice(successMessage);
+      this.toastService.success(successMessage);
       return true;
     } catch (error: unknown) {
-      this.error.set(this.errorMessage(error, fallbackError));
+      this.toastService.error(this.errorMessage(error, fallbackError));
       return false;
     } finally {
       this.submitting.set(false);
     }
-  }
-
-  private showNotice(message: string): void {
-    this.notice.set(message);
-    window.setTimeout(() => {
-      if (this.notice() === message) {
-        this.notice.set(null);
-      }
-    }, 3500);
   }
 
   private errorMessage(error: unknown, fallback: string): string {

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-26
+
+- Refatorado o shell visual com sidebar desktop expandida por padrao, recolhimento persistido e drawer mobile por hamburger.
+- Ampliado o limite de conteudo para melhor uso de telas Full HD, preservando grids responsivos.
+- Reorganizadas as acoes dos cards de contas e corrigida a semantica visual da acao de desativar.
+- Criados `ToastService` e `ToastContainer` globais para notificacoes `success`, `error`, `warning` e `info`.
+- Removidos toasts locais das paginas de contas e despesas fixas.
+- Criada mascara monetaria reutilizavel para campos de valores digitaveis.
+- Ajustado o toast global com texto centralizado, peso visual maior, borda mais arredondada, sombra sutil e barra de tempo pausavel ao passar mouse ou focar.
+- Contas inativas agora exibem acao de exclusao definitiva com icone de lixeira e mantem o botao de movimentacoes no tamanho natural do card.
+- Contas inativas agora podem ser reativadas mantendo historico, movimentacoes e vinculos existentes.
+
 ## 2026-08-25
 
 - Implementada a ORB-003 com contas financeiras, saldo derivado, movimentacoes, ajuste manual, desativacao e historico.

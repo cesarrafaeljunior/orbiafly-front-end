@@ -3,7 +3,7 @@
 }
 
 .workspace {
-  width: min(100% - 48px, 1180px);
+  width: min(100% - 48px, var(--page-max-width));
   margin: 0 auto;
   padding: var(--space-8) 0 var(--space-12);
 }
@@ -47,32 +47,11 @@ h1 {
   line-height: 1.2;
 }
 
-.button,
-.icon-button,
 .tabs button,
 .row-actions button,
 .status-button {
   font: inherit;
   cursor: pointer;
-}
-
-.button {
-  min-height: 42px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  padding: 0 var(--space-4);
-  font-weight: 700;
-}
-
-.button--primary {
-  background: var(--success);
-  color: var(--background);
-}
-
-.button--secondary {
-  border-color: var(--border);
-  background: transparent;
-  color: var(--text-secondary);
 }
 
 .period-bar {
@@ -99,17 +78,6 @@ h1 {
 .period-bar strong {
   margin-top: var(--space-1);
   font-size: 1.125rem;
-}
-
-.icon-button {
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text-primary);
-  font-size: 1.5rem;
 }
 
 .summary {
@@ -422,19 +390,6 @@ h1 {
   border-top: 1px solid var(--border);
 }
 
-.toast {
-  position: fixed;
-  right: var(--space-6);
-  bottom: var(--space-6);
-  z-index: 30;
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--success);
-  border-radius: var(--radius-sm);
-  background: var(--surface-elevated);
-  color: var(--text-primary);
-  box-shadow: var(--shadow-md);
-}
-
 @media (max-width: 900px) {
   .controls {
     align-items: stretch;
@@ -480,7 +435,7 @@ h1 {
 
 @media (max-width: 620px) {
   .workspace {
-    width: min(100% - 32px, 1180px);
+    width: min(100% - 32px, var(--page-max-width));
     padding-top: var(--space-6);
   }
 
@@ -527,12 +482,6 @@ h1 {
     justify-content: space-between;
     border-top: 1px solid var(--border);
     padding-top: var(--space-2);
-  }
-
-  .toast {
-    right: var(--space-4);
-    bottom: var(--space-4);
-    left: var(--space-4);
   }
 
   .amount-modal header,
