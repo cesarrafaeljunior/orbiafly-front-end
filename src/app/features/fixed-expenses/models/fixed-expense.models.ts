@@ -1,5 +1,12 @@
 export type PaymentStatus = 'PENDING' | 'PAID';
-export type ExpenseStatusFilter = 'ALL' | PaymentStatus;
+export type ExpenseStatusFilter = 'ALL' | PaymentStatus | 'OVERDUE';
+export type ExpenseSortOption =
+  | 'DUE_ASC'
+  | 'DUE_DESC'
+  | 'AMOUNT_DESC'
+  | 'AMOUNT_ASC'
+  | 'NAME_ASC'
+  | 'NAME_DESC';
 
 export interface Category {
   id: string;
@@ -32,6 +39,7 @@ export interface MonthlyExpense {
   name: string;
   amount: number;
   defaultAmount: number;
+  dueDate: string;
   dueDay: number;
   categoryId: string;
   category: string;
@@ -39,6 +47,9 @@ export interface MonthlyExpense {
   paidAt: string | null;
   financialAccountId: string | null;
   financialAccountName: string | null;
+  overdue: boolean;
+  daysUntilDue: number | null;
+  daysOverdue: number | null;
   active: boolean;
 }
 
@@ -63,8 +74,10 @@ export interface MonthlySummary {
   total: number;
   paidTotal: number;
   pendingTotal: number;
+  totalCount: number;
   paidCount: number;
   pendingCount: number;
+  paidPercentage: number;
 }
 
 export interface MonthlyExpensesResponse {

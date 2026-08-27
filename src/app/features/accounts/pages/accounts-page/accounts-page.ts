@@ -80,6 +80,9 @@ export class AccountsPage implements OnInit {
 
     return accounts;
   });
+  protected readonly hasOnlyInactiveAccounts = computed(
+    () => this.store.includeInactive() && this.store.overview().accounts.length > 0 && this.store.overview().activeCount === 0,
+  );
 
   protected readonly accountForm = new FormGroup({
     name: new FormControl('', {
@@ -113,6 +116,7 @@ export class AccountsPage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.store.initialize();
+    await this.ensureInactiveAccountsAreVisible();
   }
 
   protected openCreate(): void {
@@ -201,6 +205,7 @@ export class AccountsPage implements OnInit {
     const account = this.deactivatingAccount();
     if (account && (await this.store.deactivate(account))) {
       this.deactivatingAccount.set(null);
+      await this.ensureInactiveAccountsAreVisible();
     }
   }
 
@@ -217,6 +222,10 @@ export class AccountsPage implements OnInit {
   }
 
   protected async changeStatusFilter(filter: AccountStatusFilter): Promise<void> {
+    if (filter === 'ACTIVE' && this.hasOnlyInactiveAccounts()) {
+      return;
+    }
+
     this.statusFilter.set(filter);
 
     // ACTIVE pode continuar usando apenas as contas ativas.
@@ -237,5 +246,17 @@ export class AccountsPage implements OnInit {
       return 'Crédito';
     }
     return 'Ajuste';
+  }
+
+  private async ensureInactiveAccountsAreVisible(): Promise<void> {
+    if (this.store.overview().accounts.length > 0 || this.store.includeInactive()) {
+      return;
+    }
+
+    await this.store.setIncludeInactive(true);
+
+    if (this.store.overview().accounts.length > 0 && this.store.overview().activeCount === 0) {
+      this.statusFilter.set('INACTIVE');
+    }
   }
 }

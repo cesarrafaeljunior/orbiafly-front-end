@@ -34,6 +34,7 @@ export class Sidebar {
       items: [
         { label: 'Despesas fixas', path: '/despesas-fixas', icon: 'ph-receipt' },
         { label: 'Contas', path: '/contas', icon: 'ph-wallet' },
+        { label: 'Cartões', path: '/cartoes', icon: 'ph-credit-card' },
       ],
     },
   ];

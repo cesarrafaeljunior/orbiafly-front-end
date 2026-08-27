@@ -32,6 +32,7 @@
 
       <div class="status-filter" aria-label="Filtrar contas por status">
         <button type="button" [class.status-filter__option--active]="statusFilter() === 'ACTIVE'"
+          [disabled]="hasOnlyInactiveAccounts()"
           (click)="changeStatusFilter('ACTIVE')">
           <span class="status-dot status-dot--active"></span>
           Ativas

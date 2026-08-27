@@ -1,0 +1,335 @@
+<main class="cards-workspace">
+  <header class="page-heading">
+    <div>
+      <h1>Cartões</h1>
+      <p class="page-description">Gerencie limites de crédito sem misturar cartão com dinheiro disponível.</p>
+    </div>
+  </header>
+
+  @if (store.overview().cards.length > 0) {
+    <section class="cards-toolbar">
+      <div class="cards-overview">
+        <span>Limite disponível total</span>
+        <strong>
+          {{ store.overview().availableLimit | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+        </strong>
+        <small>
+          {{ store.overview().activeCount }}
+          {{ store.overview().activeCount === 1 ? 'cartão ativo' : 'cartões ativos' }}
+        </small>
+        <div class="overview-progress" aria-label="Uso total do limite">
+          <span [style.width.%]="store.usagePercentage()"></span>
+        </div>
+      </div>
+
+      <div class="cards-controls">
+        <div class="card-search">
+          <i class="ph ph-magnifying-glass card-search__icon" aria-hidden="true"></i>
+          <input
+            type="search"
+            aria-label="Buscar cartões"
+            placeholder="Buscar cartões..."
+            [value]="searchTerm()"
+            (input)="updateSearch($event)"
+          />
+        </div>
+
+        <div class="status-filter" aria-label="Filtrar cartões por status">
+          <button
+            type="button"
+            [class.status-filter__option--active]="statusFilter() === 'ACTIVE'"
+            [disabled]="hasOnlyInactiveCards()"
+            (click)="changeStatusFilter('ACTIVE')"
+          >
+            <span class="status-dot status-dot--active"></span>
+            Ativos
+          </button>
+          <button
+            type="button"
+            [class.status-filter__option--active]="statusFilter() === 'INACTIVE'"
+            (click)="changeStatusFilter('INACTIVE')"
+          >
+            <span class="status-dot"></span>
+            Inativos
+          </button>
+          <button
+            type="button"
+            [class.status-filter__option--active]="statusFilter() === 'ALL'"
+            (click)="changeStatusFilter('ALL')"
+          >
+            Todos
+          </button>
+        </div>
+
+        <label class="sort-control">
+          <span>Ordenar por</span>
+          <select [value]="sortOption()" (change)="changeSort($event)">
+            <option value="NAME_ASC">Nome A-Z</option>
+            <option value="NAME_DESC">Nome Z-A</option>
+            <option value="LIMIT_DESC">Maior limite</option>
+            <option value="LIMIT_ASC">Menor limite</option>
+          </select>
+        </label>
+      </div>
+    </section>
+  }
+
+  @if (store.error()) {
+    <section class="feedback" role="alert">
+      <div>
+        <strong>Não foi possível concluir a operação</strong>
+        <p>{{ store.error() }}</p>
+      </div>
+      <button class="button button--secondary" type="button" (click)="store.loadCards()">
+        Tentar novamente
+      </button>
+    </section>
+  }
+
+  @if (store.loading()) {
+    <section class="cards-loading" aria-live="polite" aria-label="Carregando cartões">
+      @for (item of [1, 2, 3]; track item) {
+        <div></div>
+      }
+    </section>
+  } @else if (store.overview().cards.length === 0) {
+    <section class="empty-state">
+      <div class="empty-state__icon" aria-hidden="true">
+        <i class="ph ph-credit-card"></i>
+      </div>
+      <div class="empty-state__content">
+        <h2>Nenhum cartão cadastrado</h2>
+        <p>Cadastre seu primeiro cartão para acompanhar limite total, utilizado e disponível.</p>
+      </div>
+      <button class="button button--primary" type="button" (click)="openCreate()">
+        <i class="ph ph-plus"></i>
+        Adicionar cartão
+      </button>
+    </section>
+  } @else if (filteredCards().length === 0) {
+    <section class="empty-state">
+      <div class="empty-state__icon" aria-hidden="true">
+        <i class="ph ph-magnifying-glass"></i>
+      </div>
+      <h2>Nenhum cartão encontrado</h2>
+      <p>Nenhum cartão corresponde à busca ou aos filtros selecionados.</p>
+    </section>
+  } @else {
+    <section class="cards-grid" aria-label="Cartões de crédito">
+      @for (card of filteredCards(); track card.id) {
+        <article class="credit-card" [class.credit-card--inactive]="!card.active">
+          <header class="credit-card__header">
+            <div class="card-identity">
+              <div class="card-avatar" aria-hidden="true">
+                <i class="ph ph-credit-card"></i>
+              </div>
+              <div>
+                <h2>{{ card.name }}</h2>
+                <p>
+                  {{ brandLabels[card.brand] }}
+                  @if (card.lastFourDigits) {
+                    <span>•••• {{ card.lastFourDigits }}</span>
+                  }
+                </p>
+              </div>
+            </div>
+
+            <span class="card-status" [class.card-status--inactive]="!card.active">
+              <i
+                class="ph"
+                [class.ph-check-circle]="card.active"
+                [class.ph-pause-circle]="!card.active"
+                aria-hidden="true"
+              ></i>
+              {{ card.active ? 'Ativo' : 'Inativo' }}
+            </span>
+          </header>
+
+          <section class="card-limit">
+            <span>Limite disponível</span>
+            <strong>
+              {{ card.availableLimit | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+            </strong>
+            <small>
+              Utilizado
+              {{ card.usedLimit | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+              de
+              {{ card.totalLimit | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+            </small>
+            <div class="limit-progress" aria-label="Percentual de limite utilizado">
+              <span [style.width.%]="usagePercentage(card)"></span>
+            </div>
+          </section>
+
+          <section class="card-dates" aria-label="Ciclo do cartão">
+            <div>
+              <span>Fecha dia</span>
+              <strong>{{ card.closingDay | number: '2.0-0' }}</strong>
+            </div>
+            <div>
+              <span>Vence dia</span>
+              <strong>{{ card.dueDay | number: '2.0-0' }}</strong>
+            </div>
+          </section>
+
+          <footer class="credit-card__actions">
+            @if (card.active) {
+              <button class="action-button card-action" type="button" (click)="openEdit(card)">
+                <i class="ph ph-pencil-simple" aria-hidden="true"></i>
+                Editar
+              </button>
+              <button
+                class="action-button action-button--danger card-action"
+                type="button"
+                (click)="deactivatingCard.set(card)"
+              >
+                <i class="ph ph-power" aria-hidden="true"></i>
+                Desativar
+              </button>
+            } @else {
+              <button class="action-button card-action" type="button" (click)="reactivateCard(card)">
+                <i class="ph ph-arrow-clockwise" aria-hidden="true"></i>
+                Reativar
+              </button>
+              <button
+                class="action-button action-button--danger card-action"
+                type="button"
+                (click)="deletingCard.set(card)"
+              >
+                <i class="ph ph-trash" aria-hidden="true"></i>
+                Excluir
+              </button>
+            }
+          </footer>
+        </article>
+      }
+
+      @if (statusFilter() !== 'INACTIVE') {
+        <button class="new-card-card" type="button" (click)="openCreate()">
+          <div class="new-card-card__icon" aria-hidden="true">
+            <i class="ph ph-plus"></i>
+          </div>
+          <strong>Adicionar cartão</strong>
+          <small>Cadastre um cartão de crédito para acompanhar seu limite.</small>
+        </button>
+      }
+    </section>
+  }
+</main>
+
+@if (showCardForm()) {
+  <div class="modal-backdrop" (mousedown)="closeCardForm()">
+    <section
+      class="form-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="card-form-title"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <header>
+        <div>
+          <p class="eyebrow">{{ editingCard() ? 'Dados do cartão' : 'Novo limite de crédito' }}</p>
+          <h2 id="card-form-title">{{ editingCard() ? 'Editar cartão' : 'Novo cartão' }}</h2>
+        </div>
+        <button class="icon-button" type="button" aria-label="Fechar" (click)="closeCardForm()">
+          ×
+        </button>
+      </header>
+
+      <form [formGroup]="cardForm" (ngSubmit)="saveCard()">
+        <label>
+          Nome
+          <input formControlName="name" type="text" maxlength="120" />
+          @if (cardForm.controls.name.touched && cardForm.controls.name.invalid) {
+            <small>Informe o nome do cartão.</small>
+          }
+        </label>
+
+        <label>
+          Bandeira
+          <select formControlName="brand">
+            @for (brand of brands; track brand) {
+              <option [value]="brand">{{ brandLabels[brand] }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Últimos 4 dígitos
+          <input formControlName="lastFourDigits" type="text" inputmode="numeric" maxlength="4" />
+          @if (cardForm.controls.lastFourDigits.touched && cardForm.controls.lastFourDigits.invalid) {
+            <small>Informe exatamente 4 números ou deixe em branco.</small>
+          }
+        </label>
+
+        <label>
+          Limite total
+          <input appCurrencyMask formControlName="totalLimit" type="text" inputmode="decimal" />
+          @if (cardForm.controls.totalLimit.touched && cardForm.controls.totalLimit.invalid) {
+            <small>Informe um limite igual ou maior que zero.</small>
+          }
+        </label>
+
+        <div class="day-fields">
+          <label>
+            Dia de fechamento
+            <input formControlName="closingDay" type="number" min="1" max="31" />
+            @if (cardForm.controls.closingDay.touched && cardForm.controls.closingDay.invalid) {
+              <small>Use um dia entre 1 e 31.</small>
+            }
+          </label>
+          <label>
+            Dia de vencimento
+            <input formControlName="dueDay" type="number" min="1" max="31" />
+            @if (cardForm.controls.dueDay.touched && cardForm.controls.dueDay.invalid) {
+              <small>Use um dia entre 1 e 31.</small>
+            }
+          </label>
+        </div>
+
+        <footer>
+          <button class="button button--secondary" type="button" (click)="closeCardForm()">
+            Cancelar
+          </button>
+          <button class="button button--primary" type="submit" [disabled]="store.submitting()">
+            {{ editingCard() ? 'Salvar cartão' : 'Criar cartão' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (deactivatingCard(); as card) {
+  <section class="modal-backdrop" (mousedown)="deactivatingCard.set(null)">
+    <div class="confirm-modal" role="dialog" aria-modal="true" (mousedown)="$event.stopPropagation()">
+      <h2>Desativar cartão</h2>
+      <p>O cartão {{ card.name }} ficará indisponível para uso futuro, mantendo o histórico.</p>
+      <footer>
+        <button class="button button--secondary" type="button" (click)="deactivatingCard.set(null)">
+          Cancelar
+        </button>
+        <button class="button button--danger" type="button" (click)="confirmDeactivation()">
+          Desativar
+        </button>
+      </footer>
+    </div>
+  </section>
+}
+
+@if (deletingCard(); as card) {
+  <section class="modal-backdrop" (mousedown)="deletingCard.set(null)">
+    <div class="confirm-modal" role="dialog" aria-modal="true" (mousedown)="$event.stopPropagation()">
+      <h2>Excluir cartão</h2>
+      <p>O cartão {{ card.name }} será removido das consultas normais. O registro será preservado internamente.</p>
+      <footer>
+        <button class="button button--secondary" type="button" (click)="deletingCard.set(null)">
+          Cancelar
+        </button>
+        <button class="button button--danger" type="button" (click)="confirmDeletion()">
+          Excluir
+        </button>
+      </footer>
+    </div>
+  </section>
+}

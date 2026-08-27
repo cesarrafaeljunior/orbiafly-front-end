@@ -2,16 +2,6 @@
   display: contents;
 }
 
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  display: grid;
-  place-items: center;
-  padding: var(--space-4);
-  background: color-mix(in srgb, var(--background) 82%, transparent);
-}
-
 .payment-modal {
   width: min(100%, 500px);
   border: 1px solid var(--border);
@@ -23,7 +13,7 @@
 header,
 footer,
 .payment-context,
-.available-balance {
+.balance-preview {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -85,7 +75,7 @@ label {
 
 .payment-context span,
 label > span,
-.available-balance span {
+.balance-preview span {
   color: var(--text-muted);
   font-size: 0.8125rem;
 }
@@ -103,9 +93,20 @@ input {
   font: inherit;
 }
 
-.available-balance {
+.balance-preview {
+  align-items: stretch;
+}
+
+.balance-preview div {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
   padding: var(--space-3);
   background: var(--surface);
+}
+
+.balance-negative {
+  color: var(--warning);
 }
 
 .negative-warning {
@@ -121,31 +122,14 @@ footer {
   padding-top: var(--space-2);
 }
 
-footer button {
-  min-height: 42px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  padding: 0 var(--space-4);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.secondary-button {
-  border-color: var(--border);
-  background: transparent;
-  color: var(--text-secondary);
-}
-
-.primary-button {
-  background: var(--success);
-  color: var(--background);
-}
-
 @media (max-width: 540px) {
   header,
   form {
     padding: var(--space-4);
+  }
+
+  .balance-preview {
+    display: grid;
   }
 
   footer {

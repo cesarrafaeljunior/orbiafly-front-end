@@ -22,23 +22,31 @@
         <strong>{{ expense().amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
       </div>
       <label>
-        <span>Origem do dinheiro</span>
+        <span>Conta de origem</span>
         <select formControlName="financialAccountId">
           <option value="" disabled>Selecione uma conta</option>
           @for (account of accounts(); track account.id) {
             <option [value]="account.id">
-              {{ account.name }} —
+              {{ account.name }} -
               {{ account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
             </option>
           }
         </select>
       </label>
       @if (selectedAccount(); as account) {
-        <div class="available-balance">
-          <span>Saldo disponível</span>
-          <strong>{{
-            account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
-          }}</strong>
+        <div class="balance-preview" aria-label="Prévia de saldo após pagamento">
+          <div>
+            <span>Saldo atual</span>
+            <strong>{{
+              account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+            }}</strong>
+          </div>
+          <div>
+            <span>Saldo após pagamento</span>
+            <strong [class.balance-negative]="projectedBalance(account) < 0">{{
+              projectedBalance(account) | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+            }}</strong>
+          </div>
         </div>
         @if (account.currentBalance < expense().amount) {
           <p class="negative-warning" role="status">
@@ -51,8 +59,10 @@
         <input formControlName="paymentDate" type="date" />
       </label>
       <footer>
-        <button class="secondary-button" type="button" (click)="cancelled.emit()">Cancelar</button>
-        <button class="primary-button" type="submit" [disabled]="submitting()">
+        <button class="button button--secondary" type="button" (click)="cancelled.emit()">
+          Cancelar
+        </button>
+        <button class="button button--primary" type="submit" [disabled]="submitting()">
           Confirmar pagamento
         </button>
       </footer>

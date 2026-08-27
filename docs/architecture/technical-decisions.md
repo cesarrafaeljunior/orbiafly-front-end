@@ -122,6 +122,22 @@ Registro leve de decisoes arquiteturais do Orbiafly. Nao e necessario seguir um 
 - Consequencias: o DTO agregado do dashboard fornece contas e saldo; totais pago e pendente continuam limitados a despesas fixas.
 - Status: aceita.
 
+## ORB - Despesas fixas como gerenciamento mensal
+
+- Decisao: evoluir a tela de despesas fixas para uma experiencia mensal em cards, com resumo financeiro, progresso, busca por nome/categoria, filtros de status e ordenacao local.
+- Contexto: a tela anterior usava leitura proxima de tabela e nao destacava rapidamente total, pago, pendente, atraso e origem do pagamento.
+- Motivo: tornar a competencia mensal mais acionavel sem redesenhar Dashboard nem duplicar regras financeiras no frontend.
+- Consequencias: `OVERDUE` e filtro visual derivado de `status=PENDING` e `dueDate < hoje`; pagamento usa modal com conta de origem, saldo atual e saldo apos pagamento; nova despesa fica como card ao fim da listagem.
+- Status: aceita.
+
+## ORB - Budget de estilos por componente
+
+- Decisao: ajustar `anyComponentStyle` para warning em 12kB e erro em 16kB.
+- Contexto: telas operacionais reais como Contas ja excediam o limite inicial de 8kB em build de producao.
+- Motivo: manter build de producao valido enquanto a interface usa componentes responsivos densos e estados completos.
+- Consequencias: componentes acima de 12kB ainda geram warning e devem ser revisados quando crescerem sem necessidade.
+- Status: aceita.
+
 ## Arquitetura por dominio/feature
 
 - Decisao: organizar funcionalidades por dominio ou feature.

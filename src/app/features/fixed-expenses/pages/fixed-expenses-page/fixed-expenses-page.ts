@@ -1,10 +1,11 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyMaskDirective } from '../../../../shared/directives/currency-mask.directive';
 import { ExpenseForm } from '../../components/expense-form/expense-form';
 import { PaymentForm, PaymentPayload } from '../../components/payment-form/payment-form';
 import {
+  ExpenseSortOption,
   ExpenseStatusFilter,
   FixedExpensePayload,
   MonthlyExpense,
@@ -12,7 +13,14 @@ import {
 import { FixedExpensesStore } from '../../services/fixed-expenses-store';
 
 @Component({
-  imports: [CurrencyMaskDirective, CurrencyPipe, ExpenseForm, PaymentForm, ReactiveFormsModule],
+  imports: [
+    CurrencyMaskDirective,
+    CurrencyPipe,
+    DecimalPipe,
+    ExpenseForm,
+    PaymentForm,
+    ReactiveFormsModule,
+  ],
   providers: [FixedExpensesStore],
   selector: 'app-fixed-expenses-page',
   styleUrl: './fixed-expenses-page.scss',
@@ -28,6 +36,14 @@ export class FixedExpensesPage implements OnInit {
     nonNullable: true,
     validators: [Validators.required, Validators.min(0)],
   });
+  protected readonly sortOptions: { value: ExpenseSortOption; label: string }[] = [
+    { value: 'DUE_ASC', label: 'Vencimento mais próximo' },
+    { value: 'DUE_DESC', label: 'Vencimento mais distante' },
+    { value: 'AMOUNT_DESC', label: 'Maior valor' },
+    { value: 'AMOUNT_ASC', label: 'Menor valor' },
+    { value: 'NAME_ASC', label: 'Nome A-Z' },
+    { value: 'NAME_DESC', label: 'Nome Z-A' },
+  ];
 
   ngOnInit(): void {
     void this.store.initialize();
@@ -96,6 +112,10 @@ export class FixedExpensesPage implements OnInit {
     this.store.categoryFilter.set((event.target as HTMLSelectElement).value);
   }
 
+  protected setSort(event: Event): void {
+    this.store.sortOption.set((event.target as HTMLSelectElement).value as ExpenseSortOption);
+  }
+
   protected changePayment(item: MonthlyExpense): void {
     if (item.status === 'PENDING' && this.store.accounts().length > 0) {
       this.payingExpense.set(item);
@@ -116,5 +136,68 @@ export class FixedExpensesPage implements OnInit {
     if (await this.store.registerPayment(item, payload.financialAccountId, payload.paymentDate)) {
       this.closePayment();
     }
+  }
+
+  protected dueBadge(item: MonthlyExpense): string {
+    return this.formatDayMonth(new Date(`${item.dueDate}T00:00:00Z`));
+  }
+
+  protected paymentDateLabel(item: MonthlyExpense): string {
+    if (!item.paidAt) {
+      return 'Pagamento registrado';
+    }
+    return `Pago em ${this.formatDayMonth(new Date(item.paidAt))}`;
+  }
+
+  protected dueContext(item: MonthlyExpense): string {
+    if (item.status === 'PAID') {
+      return this.paymentDateLabel(item);
+    }
+    if (item.daysOverdue) {
+      return item.daysOverdue === 1 ? 'Vencida há 1 dia' : `Vencida há ${item.daysOverdue} dias`;
+    }
+    if (item.daysUntilDue === 0) {
+      return 'Vence hoje';
+    }
+    if (item.daysUntilDue === 1) {
+      return 'Vence amanhã';
+    }
+    return `Vence em ${item.daysUntilDue ?? 0} dias`;
+  }
+
+  protected dueTone(item: MonthlyExpense): 'success' | 'warning' | 'error' | 'neutral' {
+    if (item.status === 'PAID') {
+      return 'success';
+    }
+    if (item.overdue) {
+      return 'error';
+    }
+    if ((item.daysUntilDue ?? 99) <= 5) {
+      return 'warning';
+    }
+    return 'neutral';
+  }
+
+  protected statusLabel(item: MonthlyExpense): string {
+    if (item.status === 'PAID') {
+      return 'Pago';
+    }
+    return item.overdue ? 'Vencida' : 'Pendente';
+  }
+
+  private formatDayMonth(date: Date): string {
+    const day = new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      timeZone: 'UTC',
+    }).format(date);
+    const month = new Intl.DateTimeFormat('pt-BR', {
+      month: 'short',
+      timeZone: 'UTC',
+    })
+      .format(date)
+      .replace('.', '')
+      .toUpperCase();
+
+    return `${day} ${month}`;
   }
 }

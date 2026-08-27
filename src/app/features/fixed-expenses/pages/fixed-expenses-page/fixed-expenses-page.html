@@ -1,112 +1,85 @@
 <main class="workspace">
   <header class="page-heading">
     <div>
-      <p class="eyebrow">Planejamento mensal</p>
-      <h1>Despesas fixas</h1>
+      <h1>Despesas Fixas</h1>
+      <p class="page-description">Acompanhe seus compromissos recorrentes e pagamentos do mês.</p>
     </div>
-    <button
-      class="button button--primary"
-      type="button"
-      [disabled]="store.categories().length === 0"
-      (click)="openCreate()"
-    >
-      <span aria-hidden="true">+</span>
-      Nova despesa
-    </button>
   </header>
 
+  @if (store.items().length > 0) {
+    <section class="monthly-panel" aria-label="Resumo mensal">
+      <div class="summary-grid">
+        <div class="metric metric--total">
+          <span>Total do mês</span>
+          <strong>{{ store.summary().total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+          <small>{{ store.summary().totalCount }} {{ store.summary().totalCount === 1 ? 'despesa' : 'despesas' }}</small>
+        </div>
+        <div class="metric metric--paid">
+          <span>Pago</span>
+          <strong>{{ store.summary().paidTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+          <small>{{ store.summary().paidCount }} {{ store.summary().paidCount === 1 ? 'paga' : 'pagas' }}</small>
+        </div>
+        <div class="metric">
+          <span>Pendente</span>
+          <strong>{{ store.summary().pendingTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+          <small>{{ store.summary().pendingCount }} {{ store.summary().pendingCount === 1 ? 'pendente' : 'pendentes' }}</small>
+        </div>
+        <div class="metric metric--progress">
+          <span>Progresso</span>
+          <strong>{{ store.summary().paidCount }} de {{ store.summary().totalCount }}</strong>
+          <small>{{ store.summary().paidPercentage | number: '1.1-1' : 'pt-BR' }}% do valor quitado</small>
+        </div>
+      </div>
+
+      <div class="progress-track" aria-label="Percentual financeiro pago">
+        <span [style.width.%]="store.summary().paidPercentage"></span>
+      </div>
+    </section>
+  }
+
   <section class="period-bar" aria-label="Competência selecionada">
-    <button
-      class="icon-button"
-      type="button"
-      title="Mês anterior"
-      aria-label="Mês anterior"
-      (click)="store.moveMonth(-1)"
-    >
-      ‹
+    <button class="icon-button" type="button" title="Mês anterior" aria-label="Mês anterior" (click)="store.moveMonth(-1)">
+      <i class="ph ph-caret-left" aria-hidden="true"></i>
     </button>
     <div>
-      <span>Competência</span>
+      <span>Competência atual</span>
       <strong>{{ store.periodLabel() }}</strong>
     </div>
-    <button
-      class="icon-button"
-      type="button"
-      title="Próximo mês"
-      aria-label="Próximo mês"
-      (click)="store.moveMonth(1)"
-    >
-      ›
+    <button class="icon-button" type="button" title="Próximo mês" aria-label="Próximo mês" (click)="store.moveMonth(1)">
+      <i class="ph ph-caret-right" aria-hidden="true"></i>
     </button>
   </section>
 
-  <section class="summary" aria-label="Resumo da competência">
-    <div class="metric">
-      <span>Total</span>
-      <strong>{{ store.summary().total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
-      <small
-        >{{ store.items().length }} {{ store.items().length === 1 ? 'despesa' : 'despesas' }}</small
-      >
-    </div>
-    <div class="metric metric--paid">
-      <span>Pago</span>
-      <strong>{{
-        store.summary().paidTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
-      }}</strong>
-      <small>
-        {{ store.summary().paidCount }}
-        {{ store.summary().paidCount === 1 ? 'concluída' : 'concluídas' }}
-      </small>
-    </div>
-    <div class="metric metric--pending">
-      <span>Pendente</span>
-      <strong>{{
-        store.summary().pendingTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
-      }}</strong>
-      <small>{{ store.summary().pendingCount }} aguardando</small>
-    </div>
-  </section>
-
-  <section class="controls" aria-label="Filtros de despesas">
-    <div class="tabs" role="group" aria-label="Status do pagamento">
-      <button
-        type="button"
-        [class.tabs__active]="store.statusFilter() === 'ALL'"
-        [attr.aria-pressed]="store.statusFilter() === 'ALL'"
-        (click)="setStatusFilter('ALL')"
-      >
-        Todas
-      </button>
-      <button
-        type="button"
-        [class.tabs__active]="store.statusFilter() === 'PENDING'"
-        [attr.aria-pressed]="store.statusFilter() === 'PENDING'"
-        (click)="setStatusFilter('PENDING')"
-      >
-        Pendentes
-      </button>
-      <button
-        type="button"
-        [class.tabs__active]="store.statusFilter() === 'PAID'"
-        [attr.aria-pressed]="store.statusFilter() === 'PAID'"
-        (click)="setStatusFilter('PAID')"
-      >
-        Pagas
-      </button>
-    </div>
-
-    <div class="filter-fields">
-      <label class="search-field">
-        <span class="visually-hidden">Buscar por nome</span>
+  @if (store.items().length > 0) {
+    <section class="controls" aria-label="Busca, filtros e ordenação">
+      <div class="search-field">
+        <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
         <input
           type="search"
-          placeholder="Buscar despesa"
+          aria-label="Buscar por nome ou categoria"
+          placeholder="Buscar por nome ou categoria..."
           [value]="store.search()"
           (input)="setSearch($event)"
         />
-      </label>
-      <label>
-        <span class="visually-hidden">Filtrar por categoria</span>
+      </div>
+
+      <div class="status-filter" aria-label="Filtrar despesas por status">
+        <button type="button" [class.status-filter__option--active]="store.statusFilter() === 'ALL'" (click)="setStatusFilter('ALL')">
+          Todas
+        </button>
+        <button type="button" [class.status-filter__option--active]="store.statusFilter() === 'PENDING'" (click)="setStatusFilter('PENDING')">
+          Pendentes
+        </button>
+        <button type="button" [class.status-filter__option--active]="store.statusFilter() === 'PAID'" (click)="setStatusFilter('PAID')">
+          Pagas
+        </button>
+        <button type="button" [class.status-filter__option--active]="store.statusFilter() === 'OVERDUE'" (click)="setStatusFilter('OVERDUE')">
+          Vencidas
+        </button>
+      </div>
+
+      <label class="category-control">
+        <span>Categoria</span>
         <select [value]="store.categoryFilter()" (change)="setCategory($event)">
           <option value="ALL">Todas as categorias</option>
           @for (category of store.categories(); track category.id) {
@@ -114,8 +87,17 @@
           }
         </select>
       </label>
-    </div>
-  </section>
+
+      <label class="sort-control">
+        <span>Ordenar</span>
+        <select [value]="store.sortOption()" (change)="setSort($event)">
+          @for (option of sortOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+    </section>
+  }
 
   @if (store.error()) {
     <section class="feedback feedback--error" role="alert">
@@ -137,73 +119,95 @@
     </section>
   } @else if (store.items().length === 0) {
     <section class="empty-state">
-      <strong>Nenhuma despesa fixa nesta competência.</strong>
-      <p>Cadastre a primeira despesa para começar o acompanhamento mensal.</p>
+      <div class="empty-state__icon" aria-hidden="true">
+        <i class="ph ph-receipt"></i>
+      </div>
+      <h2>Nenhuma despesa fixa cadastrada.</h2>
+      <p>Cadastre suas despesas recorrentes para começar a acompanhar seu mês.</p>
       <button class="button button--primary" type="button" (click)="openCreate()">
-        Nova despesa
-      </button>
-    </section>
-  } @else if (store.filteredItems().length === 0) {
-    <section class="empty-state">
-      <strong>Nenhum resultado para os filtros atuais.</strong>
-      <p>Altere a busca, o status ou a categoria selecionada.</p>
-      <button class="button button--secondary" type="button" (click)="store.clearFilters()">
-        Limpar filtros
+        <i class="ph ph-plus" aria-hidden="true"></i>
+        Adicionar despesa
       </button>
     </section>
   } @else {
-    <section class="expense-list" aria-label="Despesas da competência">
-      <div class="list-header" aria-hidden="true">
-        <span>Despesa</span>
-        <span>Vencimento</span>
-        <span>Valor</span>
-        <span>Status</span>
-        <span>Ações</span>
-      </div>
-      @for (item of store.filteredItems(); track item.occurrenceId) {
-        <article class="expense-row" [class.expense-row--inactive]="!item.active">
-          <div class="expense-main">
-            <strong>{{ item.name }}</strong>
-            <span>{{ item.category }}</span>
-            @if (!item.active) {
-              <small>Inativa</small>
-            }
-            @if (item.status === 'PAID') {
-              <small class="payment-source">
-                {{
-                  item.financialAccountName
-                    ? 'Pago com ' + item.financialAccountName
-                    : 'Origem não registrada'
-                }}
-              </small>
-            }
-          </div>
-          <div class="due-date">
-            <span class="mobile-label">Vencimento</span>
-            <strong>Dia {{ item.dueDay }}</strong>
-          </div>
-          <div class="amount">
-            <span class="mobile-label">Valor</span>
-            <strong>{{ item.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
-          </div>
-          <button
-            class="status-button"
-            type="button"
-            [class.status-button--paid]="item.status === 'PAID'"
-            [attr.aria-pressed]="item.status === 'PAID'"
-            [disabled]="store.busyIds().has(item.occurrenceId)"
-            (click)="changePayment(item)"
-          >
-            <span class="status-dot" aria-hidden="true"></span>
-            {{ item.status === 'PAID' ? 'Pago' : 'Pendente' }}
-          </button>
-          <div class="row-actions">
-            <button type="button" (click)="openMonthlyEdit(item)">Editar mês</button>
-            <button type="button" (click)="openEdit(item)">Editar despesa</button>
-          </div>
-        </article>
-      }
+    <section class="competence-heading" aria-label="Competência listada">
+      <span>{{ store.periodLabel() }}</span>
     </section>
+
+    @if (store.filteredItems().length === 0) {
+      <section class="empty-state">
+        <h2>Nenhuma despesa encontrada.</h2>
+        <p>Nenhuma despesa corresponde à busca ou aos filtros selecionados.</p>
+        <button class="button button--secondary" type="button" (click)="store.clearFilters()">
+          Limpar filtros
+        </button>
+      </section>
+    } @else {
+      <section class="expense-list" aria-label="Despesas da competência">
+        @for (item of store.filteredItems(); track item.occurrenceId) {
+          <article class="expense-card" [class.expense-card--inactive]="!item.active">
+            <div class="expense-identity">
+              <div class="expense-icon" aria-hidden="true">
+                <i class="ph ph-receipt"></i>
+              </div>
+              <div>
+                <h2>{{ item.name }}</h2>
+                <span><i class="ph ph-tag" aria-hidden="true"></i>{{ item.category }}</span>
+                @if (!item.active) {
+                  <small>Inativa para próximas competências</small>
+                }
+              </div>
+            </div>
+
+            <div class="expense-amount">
+              <span>Valor</span>
+              <strong>{{ item.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+            </div>
+
+            <div class="due-info" [class.due-info--success]="dueTone(item) === 'success'" [class.due-info--warning]="dueTone(item) === 'warning'" [class.due-info--error]="dueTone(item) === 'error'">
+              <span><i class="ph ph-calendar-blank" aria-hidden="true"></i>{{ dueBadge(item) }}</span>
+              <strong>{{ dueContext(item) }}</strong>
+              @if (item.status === 'PAID') {
+                <small>{{ item.financialAccountName || 'Pagamento registrado' }}</small>
+              }
+            </div>
+
+            <div class="expense-status" [class.expense-status--paid]="item.status === 'PAID'" [class.expense-status--overdue]="item.overdue">
+              <i class="ph" [class.ph-check-circle]="item.status === 'PAID'" [class.ph-warning]="item.overdue" [class.ph-clock]="item.status === 'PENDING' && !item.overdue" aria-hidden="true"></i>
+              {{ statusLabel(item) }}
+            </div>
+
+            <footer class="expense-actions">
+              <button
+                class="action-button action-button--primary"
+                type="button"
+                [disabled]="store.busyIds().has(item.occurrenceId)"
+                (click)="changePayment(item)"
+              >
+                <i class="ph" [class.ph-check-circle]="item.status === 'PENDING'" [class.ph-arrow-counter-clockwise]="item.status === 'PAID'" aria-hidden="true"></i>
+                {{ item.status === 'PAID' ? 'Voltar para pendente' : 'Registrar pagamento' }}
+              </button>
+              <button class="action-button" type="button" (click)="openMonthlyEdit(item)">
+                <i class="ph ph-calendar-dots" aria-hidden="true"></i>
+                Editar mês
+              </button>
+              <button class="action-button" type="button" (click)="openEdit(item)">
+                <i class="ph ph-pencil-simple" aria-hidden="true"></i>
+                Editar
+              </button>
+            </footer>
+          </article>
+        }
+
+        <button class="new-expense-card" type="button" [disabled]="store.categories().length === 0" (click)="openCreate()">
+          <div class="new-expense-card__icon" aria-hidden="true">
+            <i class="ph ph-plus"></i>
+          </div>
+          <strong>Nova despesa</strong>
+          <small>Cadastre uma despesa recorrente</small>
+        </button>
+      </section>
+    }
   }
 </main>
 
@@ -231,23 +235,14 @@
           <p class="eyebrow">Somente {{ store.periodLabel() }}</p>
           <h2 id="monthly-value-title">Editar valor mensal</h2>
         </div>
-        <button
-          class="icon-button"
-          type="button"
-          title="Fechar"
-          aria-label="Fechar"
-          (click)="closeMonthlyEdit()"
-        >
+        <button class="icon-button" type="button" title="Fechar" aria-label="Fechar" (click)="closeMonthlyEdit()">
           ×
         </button>
       </header>
       <form (submit)="$event.preventDefault(); saveMonthlyAmount()">
         <div class="monthly-context">
           <strong>{{ item.name }}</strong>
-          <span
-            >Valor padrão:
-            {{ item.defaultAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</span
-          >
+          <span>Valor padrão: {{ item.defaultAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</span>
         </div>
         <label class="amount-field">
           <span>Valor desta competência</span>

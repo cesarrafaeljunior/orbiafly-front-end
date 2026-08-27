@@ -14,6 +14,7 @@ const expense: MonthlyExpense = {
   name: 'Aluguel',
   amount: 900,
   defaultAmount: 900,
+  dueDate: '2026-08-05',
   dueDay: 5,
   categoryId: 'category-1',
   category: 'Moradia',
@@ -21,6 +22,9 @@ const expense: MonthlyExpense = {
   paidAt: null,
   financialAccountId: null,
   financialAccountName: null,
+  overdue: true,
+  daysUntilDue: null,
+  daysOverdue: 22,
   active: true,
 };
 
@@ -53,6 +57,8 @@ describe('PaymentForm', () => {
 
     expect(element.textContent).toContain('Caixa');
     expect(element.textContent).toContain('R$ 500,00');
+    expect(element.textContent).toContain('Saldo após pagamento');
+    expect(element.textContent).toContain('-R$ 400,00');
     expect(element.textContent).toContain('saldo negativo');
     expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
   });

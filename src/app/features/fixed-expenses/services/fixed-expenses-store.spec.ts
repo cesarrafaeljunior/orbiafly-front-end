@@ -14,6 +14,7 @@ const pendingExpense: MonthlyExpense = {
   name: 'Energia',
   amount: 247.82,
   defaultAmount: 200,
+  dueDate: '2026-08-18',
   dueDay: 18,
   categoryId: 'category-home',
   category: 'Casa',
@@ -21,6 +22,9 @@ const pendingExpense: MonthlyExpense = {
   paidAt: null,
   financialAccountId: null,
   financialAccountName: null,
+  overdue: true,
+  daysUntilDue: null,
+  daysOverdue: 9,
   active: true,
 };
 
@@ -34,6 +38,9 @@ const paidExpense: MonthlyExpense = {
   category: 'Assinaturas',
   status: 'PAID',
   paidAt: '2026-08-10T10:00:00Z',
+  overdue: false,
+  daysUntilDue: null,
+  daysOverdue: null,
 };
 
 describe('FixedExpensesStore', () => {
@@ -93,8 +100,10 @@ describe('FixedExpensesStore', () => {
           total: 279.72,
           paidTotal: 31.9,
           pendingTotal: 247.82,
+          totalCount: 2,
           paidCount: 1,
           pendingCount: 1,
+          paidPercentage: 11.4,
         },
       }),
     );
@@ -120,8 +129,10 @@ describe('FixedExpensesStore', () => {
       total: 279.72,
       paidTotal: 31.9,
       pendingTotal: 247.82,
+      totalCount: 2,
       paidCount: 1,
       pendingCount: 1,
+      paidPercentage: 11.4,
     });
     expect(store.periodLabel()).toBe('Agosto de 2026');
   });
@@ -140,7 +151,24 @@ describe('FixedExpensesStore', () => {
     store.categoryFilter.set('ALL');
     store.search.set('ener');
     expect(store.filteredItems().map((item) => item.name)).toEqual(['Energia']);
+
+    store.search.set('assin');
+    expect(store.filteredItems().map((item) => item.name)).toEqual(['Spotify']);
     expect(api.getMonthly).not.toHaveBeenCalled();
+  });
+
+  it('filters overdue expenses and sorts locally', async () => {
+    await store.initialize();
+
+    store.statusFilter.set('OVERDUE');
+    expect(store.filteredItems().map((item) => item.name)).toEqual(['Energia']);
+
+    store.statusFilter.set('ALL');
+    store.sortOption.set('AMOUNT_DESC');
+    expect(store.filteredItems().map((item) => item.name)).toEqual(['Energia', 'Spotify']);
+
+    store.sortOption.set('NAME_DESC');
+    expect(store.filteredItems().map((item) => item.name)).toEqual(['Spotify', 'Energia']);
   });
 
   it('loads the next competence without resetting data locally', async () => {
@@ -188,6 +216,9 @@ describe('FixedExpensesStore', () => {
           paidAt: '2026-08-18T12:00:00Z',
           financialAccountId: 'account-1',
           financialAccountName: 'Conta principal',
+          overdue: false,
+          daysUntilDue: null,
+          daysOverdue: null,
         },
         payment: {
           id: 'transaction-1',

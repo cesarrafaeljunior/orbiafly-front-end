@@ -26,9 +26,9 @@ O shell principal fica em `layout/app-shell` e compoe sidebar, conteudo roteado 
 
 ## Features implementadas
 
-`features/fixed-expenses` concentra modelos, cliente HTTP, store com Signals, formulario reutilizavel e pagina mensal. O carregamento ocorre por rota lazy em `/despesas-fixas`.
+`features/fixed-expenses` concentra modelos, cliente HTTP, store com Signals, formulario reutilizavel, modal de pagamento e pagina mensal. O carregamento ocorre por rota lazy em `/despesas-fixas`.
 
-O store coordena estado remoto, filtros locais, competencia e pagamentos. O backend continua sendo a autoridade para persistencia, atomicidade e regras financeiras.
+O store coordena estado remoto, busca local por nome e categoria, filtros de status incluindo vencidas, ordenacao local da competencia, competencia e pagamentos. O backend continua sendo a autoridade para persistencia, atomicidade, saldo, data de vencimento ajustada, atraso e regras financeiras.
 
 `features/accounts` concentra cadastro, edicao, desativacao, ajuste de saldo e consulta de movimentacoes. A rota `/contas` e lazy-loaded; saldos exibidos sempre sao recebidos da API.
 
@@ -37,6 +37,8 @@ O store coordena estado remoto, filtros locais, competencia e pagamentos. O back
 O dashboard exibe as agregacoes prontas recebidas de `/api/v1/dashboard/monthly`, incluindo saldo e contas ativas. O frontend apenas formata e organiza os dados; regras de saldo, atraso, percentuais, ordenacao e limites permanecem no backend.
 
 Paginas de feature devem usar a area disponivel do shell sem voltar a limitar o conteudo ao padrao antigo de 1180px. O limite visual atual fica em `--page-max-width`, permitindo que grids e modulos ocupem melhor telas Full HD sem esticar cards isolados.
+
+Telas operacionais com cards responsivos podem exceder o budget inicial de estilos pequenos. O budget de `anyComponentStyle` aceita ate 16kB para acomodar os componentes reais sem bloquear build de producao; o warning em 12kB sinaliza quando uma tela precisa de revisao.
 
 ## Features futuras
 

@@ -45,6 +45,10 @@ export class PaymentForm implements OnInit {
     );
   }
 
+  protected projectedBalance(account: FinancialAccount): number {
+    return Math.round((account.currentBalance - this.expense().amount) * 100) / 100;
+  }
+
   protected submit(): void {
     if (!this.form.controls.financialAccountId.value && this.accounts()[0]) {
       this.form.controls.financialAccountId.setValue(this.accounts()[0].id);

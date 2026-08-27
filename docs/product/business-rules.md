@@ -18,10 +18,16 @@ Este documento registra apenas regras que ja podem ser afirmadas neste estagio. 
 - Despesas fixas sao recorrencias; pagamento pertence a competencia mensal.
 - A configuracao recorrente e separada da ocorrencia de cada ano e mes.
 - Uma ocorrencia inicia pendente e pode ser marcada como paga ou voltar para pendente.
+- Uma ocorrencia vencida e uma ocorrencia `PENDING` com data de vencimento anterior ao dia atual.
+- O filtro `Vencidas` usa a informacao derivada retornada pelo backend; vencimento nao e status persistido.
+- A busca da competencia considera nome e categoria, sem nova chamada ao backend.
+- A ordenacao local da competencia permite vencimento proximo/distante, maior/menor valor e nome A-Z/Z-A.
 - Alterar o valor mensal nao modifica o valor padrao.
 - Alterar a configuracao recorrente nao reescreve competencias ja materializadas.
 - Desativar impede novas ocorrencias e preserva o historico.
 - A competencia atual abre por padrao e nao existe acao de reset.
+- O pagamento via conta exibe saldo atual e saldo apos pagamento apenas como previa; o backend continua autoritativo.
+- Pagamentos historicos sem conta associada sao exibidos como pagamento registrado, sem inferir origem.
 - Valores sao exibidos em `pt-BR` e `BRL`.
 
 ## Dashboard mensal
@@ -48,9 +54,16 @@ Este documento registra apenas regras que ja podem ser afirmadas neste estagio. 
 ## Cartoes de credito
 
 - Cartao de credito nao e conta financeira nem origem imediata de dinheiro.
+- A tela de Cartoes lista e gerencia `CreditCard` separadamente de Contas.
+- O usuario informa nome, bandeira, ultimos quatro digitos opcionais, limite total, dia de fechamento e dia de vencimento.
+- Ultimos quatro digitos devem conter exatamente 4 numeros quando informados.
+- O usuario nao edita limite utilizado nem limite disponivel.
+- Nesta versao, limite utilizado e zero e limite disponivel e igual ao limite total retornado pela API.
+- Cartoes podem ser ativados, desativados, reativados e excluidos por soft delete.
 - Uma compra no cartao nao reduz o saldo de uma conta financeira.
 - O pagamento da fatura reduz a conta escolhida, mas nao cria uma nova despesa alem das compras ja registradas.
-- Faturas, compras e parcelamentos permanecem fora do escopo atual.
+- Faturas, compras, parcelamentos, pagamento de fatura, juros, cashback e notificacoes permanecem fora do escopo atual.
+- Regra futura: uma compra parcelada de R$ 3.000 em 10 parcelas de R$ 300 deve comprometer inicialmente R$ 3.000 do limite.
 
 ## Decisoes pendentes
 
@@ -59,4 +72,4 @@ Este documento registra apenas regras que ja podem ser afirmadas neste estagio. 
 - Suporte a multiplas moedas.
 - Politica de exclusao de transacoes alem do estorno de pagamento implementado.
 - Fechamento mensal e eventuais ajustes retroativos.
-- Modelo completo de cartoes, faturas e parcelamentos.
+- Modelo completo de compras, faturas e parcelamentos de cartao.

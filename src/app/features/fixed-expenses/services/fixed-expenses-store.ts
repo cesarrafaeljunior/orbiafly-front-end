@@ -6,8 +6,10 @@ import { AccountsApi } from '../../accounts/services/accounts-api';
 import {
   ApiProblem,
   Category,
+  ExpenseSortOption,
   ExpenseStatusFilter,
   FixedExpensePayload,
+  MonthlySummary,
   MonthlyExpense,
   PaymentStatus,
 } from '../models/fixed-expense.models';
@@ -31,6 +33,15 @@ export class FixedExpensesStore {
   readonly year = signal(this.currentDate.getFullYear());
   readonly month = signal(this.currentDate.getMonth() + 1);
   readonly items = signal<MonthlyExpense[]>([]);
+  readonly monthlySummary = signal<MonthlySummary>({
+    total: 0,
+    paidTotal: 0,
+    pendingTotal: 0,
+    totalCount: 0,
+    paidCount: 0,
+    pendingCount: 0,
+    paidPercentage: 0,
+  });
   readonly categories = signal<Category[]>([]);
   readonly accounts = signal<FinancialAccount[]>([]);
   readonly loading = signal(true);
@@ -40,6 +51,7 @@ export class FixedExpensesStore {
   readonly statusFilter = signal<ExpenseStatusFilter>('ALL');
   readonly categoryFilter = signal('ALL');
   readonly search = signal('');
+  readonly sortOption = signal<ExpenseSortOption>('DUE_ASC');
 
   readonly periodLabel = computed(() => {
     const label = monthFormatter.format(new Date(Date.UTC(this.year(), this.month() - 1, 1)));
@@ -50,25 +62,24 @@ export class FixedExpensesStore {
     const status = this.statusFilter();
     const category = this.categoryFilter();
     const search = this.search().trim().toLocaleLowerCase('pt-BR');
+    const sortOption = this.sortOption();
     return this.items().filter((item) => {
-      const matchesStatus = status === 'ALL' || item.status === status;
+      const matchesStatus =
+        status === 'ALL' ||
+        item.status === status ||
+        (status === 'OVERDUE' && item.overdue);
       const matchesCategory = category === 'ALL' || item.categoryId === category;
-      const matchesSearch = !search || item.name.toLocaleLowerCase('pt-BR').includes(search);
+      const searchableText = `${item.name} ${item.category}`.toLocaleLowerCase('pt-BR');
+      const matchesSearch = !search || searchableText.includes(search);
       return matchesStatus && matchesCategory && matchesSearch;
-    });
+    }).sort((first, second) => this.compareItems(first, second, sortOption));
   });
 
   readonly summary = computed(() => {
-    const paidItems = this.items().filter((item) => item.status === 'PAID');
-    const pendingItems = this.items().filter((item) => item.status === 'PENDING');
-    const paidCents = paidItems.reduce((total, item) => total + this.toCents(item.amount), 0);
-    const pendingCents = pendingItems.reduce((total, item) => total + this.toCents(item.amount), 0);
+    const summary = this.monthlySummary();
     return {
-      total: (paidCents + pendingCents) / 100,
-      paidTotal: paidCents / 100,
-      pendingTotal: pendingCents / 100,
-      paidCount: paidItems.length,
-      pendingCount: pendingItems.length,
+      ...summary,
+      paidPercentage: Number(summary.paidPercentage.toFixed(2)),
     };
   });
 
@@ -107,7 +118,8 @@ export class FixedExpensesStore {
     try {
       const response = await firstValueFrom(this.api.getMonthly(this.year(), this.month()));
       if (requestId === this.requestSequence) {
-        this.items.set(response.items);
+        this.items.set(response.items.map((item) => this.normalizeMonthlyExpense(item)));
+        this.monthlySummary.set(this.normalizeSummary(response.summary, response.items.length));
       }
     } catch (error: unknown) {
       if (requestId === this.requestSequence) {
@@ -154,6 +166,7 @@ export class FixedExpensesStore {
       async () => {
         const updated = await firstValueFrom(this.api.updateAmount(item.occurrenceId, amount));
         this.replaceItem(updated);
+        this.recalculateSummary();
       },
       'Valor desta competência atualizado.',
       'Não foi possível atualizar o valor mensal.',
@@ -176,6 +189,7 @@ export class FixedExpensesStore {
     try {
       const updated = await firstValueFrom(this.api.updateStatus(item.occurrenceId, nextStatus));
       this.replaceItem(updated);
+      this.recalculateSummary();
       if (nextStatus === 'PENDING' && item.financialAccountId) {
         await this.loadAccounts();
       }
@@ -206,6 +220,7 @@ export class FixedExpensesStore {
         this.api.registerPayment(item.occurrenceId, financialAccountId, paymentDate),
       );
       this.replaceItem(result.occurrence);
+      this.recalculateSummary();
       this.accounts.update((accounts) =>
         accounts.map((account) =>
           account.id === result.financialAccount.id
@@ -216,7 +231,7 @@ export class FixedExpensesStore {
       if (result.negativeBalance) {
         this.toastService.warning('Pagamento registrado. A conta ficou com saldo negativo.');
       } else {
-        this.toastService.success('Pagamento e movimentação registrados.');
+        this.toastService.success('Pagamento registrado com sucesso.');
       }
       return true;
     } catch (error: unknown) {
@@ -254,9 +269,27 @@ export class FixedExpensesStore {
   }
 
   private replaceItem(updated: MonthlyExpense): void {
+    const normalized = this.normalizeMonthlyExpense(updated);
     this.items.update((items) =>
-      items.map((item) => (item.occurrenceId === updated.occurrenceId ? updated : item)),
+      items.map((item) => (item.occurrenceId === normalized.occurrenceId ? normalized : item)),
     );
+  }
+
+  private recalculateSummary(): void {
+    const paidItems = this.items().filter((item) => item.status === 'PAID');
+    const pendingItems = this.items().filter((item) => item.status === 'PENDING');
+    const paidCents = paidItems.reduce((total, item) => total + this.toCents(item.amount), 0);
+    const pendingCents = pendingItems.reduce((total, item) => total + this.toCents(item.amount), 0);
+    const totalCents = paidCents + pendingCents;
+    this.monthlySummary.set({
+      total: totalCents / 100,
+      paidTotal: paidCents / 100,
+      pendingTotal: pendingCents / 100,
+      totalCount: this.items().length,
+      paidCount: paidItems.length,
+      pendingCount: pendingItems.length,
+      paidPercentage: totalCents === 0 ? 0 : (paidCents / totalCents) * 100,
+    });
   }
 
   private markBusy(id: string, busy: boolean): void {
@@ -281,5 +314,62 @@ export class FixedExpensesStore {
 
   private toCents(value: number): number {
     return Math.round(value * 100);
+  }
+
+  private normalizeSummary(summary: MonthlySummary, totalCount: number): MonthlySummary {
+    const paidPercentage =
+      summary.paidPercentage ?? (summary.total === 0 ? 0 : (summary.paidTotal / summary.total) * 100);
+    return {
+      ...summary,
+      totalCount: summary.totalCount ?? totalCount,
+      paidPercentage,
+    };
+  }
+
+  private normalizeMonthlyExpense(item: MonthlyExpense): MonthlyExpense {
+    const dueDate = item.dueDate ?? this.resolveDueDate(item.dueDay);
+    const today = this.startOfDay(this.currentDate);
+    const due = this.startOfDay(new Date(`${dueDate}T00:00:00Z`));
+    const daysDelta = Math.round((due.getTime() - today.getTime()) / 86_400_000);
+    const overdue = item.overdue ?? (item.status === 'PENDING' && daysDelta < 0);
+    return {
+      ...item,
+      dueDate,
+      overdue,
+      daysUntilDue: item.daysUntilDue ?? (daysDelta >= 0 ? daysDelta : null),
+      daysOverdue: item.daysOverdue ?? (overdue ? Math.abs(daysDelta) : null),
+    };
+  }
+
+  private resolveDueDate(dueDay: number): string {
+    const lastDay = new Date(Date.UTC(this.year(), this.month(), 0)).getUTCDate();
+    const validDay = Math.min(dueDay, lastDay);
+    return `${this.year()}-${String(this.month()).padStart(2, '0')}-${String(validDay).padStart(2, '0')}`;
+  }
+
+  private startOfDay(date: Date): Date {
+    return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  }
+
+  private compareItems(
+    first: MonthlyExpense,
+    second: MonthlyExpense,
+    sortOption: ExpenseSortOption,
+  ): number {
+    switch (sortOption) {
+      case 'DUE_DESC':
+        return second.dueDate.localeCompare(first.dueDate);
+      case 'AMOUNT_DESC':
+        return this.toCents(second.amount) - this.toCents(first.amount);
+      case 'AMOUNT_ASC':
+        return this.toCents(first.amount) - this.toCents(second.amount);
+      case 'NAME_ASC':
+        return first.name.localeCompare(second.name, 'pt-BR');
+      case 'NAME_DESC':
+        return second.name.localeCompare(first.name, 'pt-BR');
+      case 'DUE_ASC':
+      default:
+        return first.dueDate.localeCompare(second.dueDate);
+    }
   }
 }
