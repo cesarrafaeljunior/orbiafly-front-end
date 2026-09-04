@@ -41,6 +41,7 @@ export class Sidebar {
         { label: 'Contas', path: '/contas', icon: 'ph-wallet' },
         { label: 'Cartões', path: '/cartoes', icon: 'ph-credit-card' },
         { label: 'Compras parceladas', path: '/compras-parceladas', icon: 'ph-shopping-bag-open' },
+        { label: 'Parcelados', path: '/parcelados', icon: 'ph-calendar-check' },
         { label: 'Empréstimos', path: '/emprestimos', icon: 'ph-hand-coins' },
       ],
     },

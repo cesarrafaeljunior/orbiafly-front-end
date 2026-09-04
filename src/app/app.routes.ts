@@ -17,6 +17,7 @@ export const routes: Routes = [
         (component) => component.RegisterPage,
       ),
   },
+  { path: 'cadastro', redirectTo: 'register' },
   {
     path: '',
     component: AppShell,
@@ -56,6 +57,13 @@ export const routes: Routes = [
           import(
             './features/credit-card-purchases/pages/credit-card-purchases-page/credit-card-purchases-page'
           ).then((component) => component.CreditCardPurchasesPage),
+      },
+      {
+        path: 'parcelados',
+        loadComponent: () =>
+          import(
+            './features/installment-expenses/pages/installment-expenses-page/installment-expenses-page'
+          ).then((component) => component.InstallmentExpensesPage),
       },
       {
         path: 'emprestimos',
