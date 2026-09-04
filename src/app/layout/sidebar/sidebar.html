@@ -68,13 +68,29 @@
   </nav>
 
   <footer class="sidebar__user">
-    <button type="button" title="Minha conta">
+    <div class="sidebar__user-card" [title]="collapsed() ? userTitle() : null">
       <i class="ph ph-user-circle" aria-hidden="true"></i>
       @if (!collapsed()) {
         <span>
-          <strong>Usuário</strong>
-          <small>Minha conta</small>
+          <strong>{{ user()?.username ?? 'Usuário' }}</strong>
+          <small>{{ user()?.email ?? 'Minha conta' }}</small>
+          @if (isAdmin()) {
+            <em>Admin</em>
+          }
         </span>
+      }
+    </div>
+
+    <button
+      class="sidebar__logout"
+      type="button"
+      [title]="collapsed() ? 'Sair' : null"
+      [attr.aria-label]="collapsed() ? 'Sair' : null"
+      (click)="logout()"
+    >
+      <i class="ph ph-sign-out" aria-hidden="true"></i>
+      @if (!collapsed()) {
+        <span>Sair</span>
       }
     </button>
   </footer>

@@ -20,9 +20,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.brand')?.textContent).toContain('Orbiafly');
-    expect(compiled.querySelector('.sidebar__nav')?.textContent).toContain('Dashboard');
-    expect(compiled.querySelector('.sidebar__nav')?.textContent).toContain('Despesas fixas');
-    expect(compiled.querySelector('.sidebar__nav')?.textContent).toContain('Contas');
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
+    expect(compiled.querySelector('app-toast-container')).toBeTruthy();
   });
 });

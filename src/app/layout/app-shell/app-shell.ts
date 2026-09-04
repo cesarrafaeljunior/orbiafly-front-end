@@ -1,12 +1,11 @@
 import { Component, HostBinding, signal } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { ToastContainer } from '../../shared/components/toast-container/toast-container';
 import { Sidebar } from '../sidebar/sidebar';
 
 const SIDEBAR_STORAGE_KEY = 'orbiafly.sidebar.collapsed';
 
 @Component({
-  imports: [RouterLink, RouterOutlet, Sidebar, ToastContainer],
+  imports: [RouterLink, RouterOutlet, Sidebar],
   selector: 'app-shell',
   styleUrl: './app-shell.scss',
   templateUrl: './app-shell.html',

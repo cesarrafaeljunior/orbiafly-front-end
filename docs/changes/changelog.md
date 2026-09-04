@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-31
+
+- Implementada a tela de Compras parceladas com resumo financeiro, busca, filtros, ordenacao, cards responsivos e modal de cadastro.
+- Adicionado item de navegacao e rota `/compras-parceladas`.
+- Integrado o cadastro ao endpoint de compras parceladas e ao overview de cartoes ativos para preview de limite.
+- Adicionada cobertura de store e pagina usando o toast global.
+- Implementada a tela de Emprestimos com resumo, busca, filtros, cards responsivos, cadastro, lancamentos e detalhes.
+- Adicionado item de navegacao e rota `/emprestimos`.
+- Integrado pagamento/recebimento ao endpoint de emprestimos e ao overview de contas ativas para preview de saldo.
+
 ## 2026-08-26
 
 - Refatorado o shell visual com sidebar desktop expandida por padrao, recolhimento persistido e drawer mobile por hamburger.

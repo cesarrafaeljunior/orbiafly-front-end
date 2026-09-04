@@ -1,0 +1,327 @@
+<main class="purchase-workspace">
+  <header class="page-heading">
+    <div>
+      <h1>Compras parceladas</h1>
+      <p class="page-description">Acompanhe compras no cartão, parcelas futuras e o limite comprometido.</p>
+    </div>
+  </header>
+
+  @if (store.overview().purchases.length > 0) {
+    <section class="purchase-summary" aria-label="Resumo de compras parceladas">
+      <article class="summary-card summary-card--primary">
+        <span>Total comprometido</span>
+        <strong>{{ store.overview().totalCommitted | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+        <small>{{ store.overview().activePurchaseCount }} em andamento</small>
+      </article>
+      <article class="summary-card">
+        <span>Compras ativas</span>
+        <strong>{{ store.overview().activePurchaseCount | number: '1.0-0' : 'pt-BR' }}</strong>
+        <small>com parcelas futuras</small>
+      </article>
+      <article class="summary-card">
+        <span>Parcelas futuras</span>
+        <strong>{{ store.overview().futureInstallmentCount | number: '1.0-0' : 'pt-BR' }}</strong>
+        <small>previstas nos próximos ciclos</small>
+      </article>
+      <article class="summary-card summary-card--month">
+        <span>Parcelas do mês</span>
+        <strong>
+          {{ store.overview().currentMonthInstallmentsAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+        </strong>
+        <small>competência atual</small>
+      </article>
+    </section>
+
+    <section class="purchase-toolbar">
+      <div class="purchase-search">
+        <i class="ph ph-magnifying-glass purchase-search__icon" aria-hidden="true"></i>
+        <input
+          type="search"
+          aria-label="Buscar compras parceladas"
+          placeholder="Buscar por compra ou cartão..."
+          [value]="searchTerm()"
+          (input)="updateSearch($event)"
+        />
+      </div>
+
+      <div class="status-filter" aria-label="Filtrar compras parceladas por status">
+        <button
+          type="button"
+          [class.status-filter__option--active]="statusFilter() === 'ALL'"
+          (click)="changeStatusFilter('ALL')"
+        >
+          Todas
+        </button>
+        <button
+          type="button"
+          [class.status-filter__option--active]="statusFilter() === 'EM_ANDAMENTO'"
+          (click)="changeStatusFilter('EM_ANDAMENTO')"
+        >
+          <span class="status-dot status-dot--warning"></span>
+          Em andamento
+        </button>
+        <button
+          type="button"
+          [class.status-filter__option--active]="statusFilter() === 'FINALIZADA'"
+          (click)="changeStatusFilter('FINALIZADA')"
+        >
+          <span class="status-dot status-dot--success"></span>
+          Finalizadas
+        </button>
+      </div>
+
+      <label class="sort-control">
+        <span>Ordenar por</span>
+        <select [value]="sortOption()" (change)="changeSort($event)">
+          <option value="RECENT">Mais recentes</option>
+          <option value="AMOUNT_DESC">Maior valor</option>
+          <option value="AMOUNT_ASC">Menor valor</option>
+          <option value="NAME_ASC">Nome A-Z</option>
+          <option value="NAME_DESC">Nome Z-A</option>
+        </select>
+      </label>
+    </section>
+  }
+
+  @if (store.error()) {
+    <section class="feedback" role="alert">
+      <div>
+        <strong>Não foi possível concluir a operação</strong>
+        <p>{{ store.error() }}</p>
+      </div>
+      <button class="button button--secondary" type="button" (click)="store.loadPurchases()">
+        Tentar novamente
+      </button>
+    </section>
+  }
+
+  @if (store.loading()) {
+    <section class="purchase-loading" aria-live="polite" aria-label="Carregando compras parceladas">
+      @for (item of [1, 2, 3]; track item) {
+        <div></div>
+      }
+    </section>
+  } @else if (store.overview().purchases.length === 0) {
+    <section class="empty-state">
+      <div class="empty-state__icon" aria-hidden="true">
+        <i class="ph ph-shopping-bag-open"></i>
+      </div>
+      <div class="empty-state__content">
+        <h2>Nenhuma compra parcelada cadastrada</h2>
+        <p>Registre sua primeira compra no cartão para acompanhar parcelas e limite comprometido.</p>
+      </div>
+      <button class="button button--primary" type="button" (click)="openCreate()">
+        <i class="ph ph-plus"></i>
+        Adicionar compra
+      </button>
+    </section>
+  } @else if (filteredPurchases().length === 0) {
+    <section class="empty-state empty-state--search">
+      <div class="empty-state__icon" aria-hidden="true">
+        <i class="ph ph-magnifying-glass"></i>
+      </div>
+      <h2>Nenhuma compra encontrada</h2>
+      <p>Nenhuma compra corresponde à busca ou aos filtros selecionados.</p>
+    </section>
+  } @else {
+    <section class="purchase-list" aria-label="Compras parceladas">
+      @for (purchase of filteredPurchases(); track purchase.id) {
+        <article
+          class="purchase-card"
+          [class.purchase-card--completed]="purchase.status === 'FINALIZADA'"
+        >
+          <header class="purchase-card__header">
+            <div class="purchase-identity">
+              <div class="purchase-avatar" aria-hidden="true">
+                <i class="ph ph-shopping-bag-open"></i>
+              </div>
+              <div>
+                <h2>{{ purchase.description }}</h2>
+                <p>
+                  {{ purchase.creditCardName }}
+                  <span>{{ brandLabels[purchase.creditCardBrand] }}</span>
+                  @if (purchase.creditCardLastFourDigits) {
+                    <span>•••• {{ purchase.creditCardLastFourDigits }}</span>
+                  }
+                </p>
+              </div>
+            </div>
+
+            <span
+              class="purchase-status"
+              [class.purchase-status--completed]="purchase.status === 'FINALIZADA'"
+            >
+              <i
+                class="ph"
+                [class.ph-clock]="purchase.status === 'EM_ANDAMENTO'"
+                [class.ph-check-circle]="purchase.status === 'FINALIZADA'"
+                aria-hidden="true"
+              ></i>
+              {{ purchaseStatusLabel(purchase.status) }}
+            </span>
+          </header>
+
+          <section class="purchase-amount">
+            <div>
+              <span>Total da compra</span>
+              <strong>{{ purchase.totalAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+            </div>
+            <div>
+              <span>Parcelamento</span>
+              <strong>
+                {{ purchase.installmentCount }}x de
+                {{ purchase.installmentAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+              </strong>
+            </div>
+          </section>
+
+          <section class="purchase-progress">
+            <div class="purchase-progress__header">
+              <span>
+                {{ purchase.completedInstallmentCount }} de {{ purchase.installmentCount }} parcelas
+              </span>
+              <strong>{{ progressPercentage(purchase) | number: '1.0-0' : 'pt-BR' }}%</strong>
+            </div>
+            <div class="progress-track" aria-label="Progresso do parcelamento">
+              <span [style.width.%]="progressPercentage(purchase)"></span>
+            </div>
+            <small>{{ nextInstallmentLabel(purchase) }}</small>
+          </section>
+
+          <footer class="purchase-card__actions">
+            <span class="purchase-date">
+              <i class="ph ph-calendar-blank" aria-hidden="true"></i>
+              {{ purchase.purchaseDate | date: 'dd MMM yyyy' : undefined : 'pt-BR' }}
+            </span>
+            <button
+              class="action-button action-button--danger"
+              type="button"
+              (click)="deletingPurchase.set(purchase)"
+            >
+              <i class="ph ph-trash" aria-hidden="true"></i>
+              Excluir
+            </button>
+          </footer>
+        </article>
+      }
+
+      <button class="new-purchase-card" type="button" (click)="openCreate()">
+        <div class="new-purchase-card__icon" aria-hidden="true">
+          <i class="ph ph-plus"></i>
+        </div>
+        <strong>Nova compra</strong>
+        <small>Registre uma compra parcelada e comprometa o limite do cartão.</small>
+      </button>
+    </section>
+  }
+</main>
+
+@if (showPurchaseForm()) {
+  <div class="modal-backdrop" (mousedown)="closePurchaseForm()">
+    <section
+      class="form-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="purchase-form-title"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <header>
+        <div>
+          <p class="eyebrow">Novo compromisso no cartão</p>
+          <h2 id="purchase-form-title">Nova compra parcelada</h2>
+        </div>
+        <button class="icon-button" type="button" aria-label="Fechar" (click)="closePurchaseForm()">
+          ×
+        </button>
+      </header>
+
+      <form [formGroup]="purchaseForm" (ngSubmit)="savePurchase()">
+        <label>
+          <span>Descrição</span>
+          <input type="text" formControlName="description" maxlength="160" placeholder="Ex.: Notebook" />
+        </label>
+
+        <label>
+          <span>Cartão</span>
+          <select formControlName="creditCardId" [disabled]="store.loadingCards() || store.activeCards().length === 0">
+            @for (card of store.activeCards(); track card.id) {
+              <option [value]="card.id">{{ cardOptionLabel(card.id) }}</option>
+            }
+          </select>
+          @if (!store.loadingCards() && store.activeCards().length === 0) {
+            <small>Nenhum cartão ativo disponível.</small>
+          }
+        </label>
+
+        <div class="form-grid">
+          <label>
+            <span>Valor total</span>
+            <input type="text" inputmode="decimal" formControlName="totalAmount" appCurrencyMask />
+          </label>
+
+          <label>
+            <span>Parcelas</span>
+            <input type="number" formControlName="installmentCount" min="1" max="360" />
+          </label>
+        </div>
+
+        <label>
+          <span>Data da compra</span>
+          <input type="date" formControlName="purchaseDate" />
+        </label>
+
+        <section class="purchase-preview" aria-label="Prévia da compra">
+          <div>
+            <span>Total</span>
+            <strong>{{ purchaseForm.controls.totalAmount.value | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+          </div>
+          <div>
+            <span>Parcela base</span>
+            <strong>
+              {{ purchaseForm.controls.installmentCount.value }}x de
+              {{ installmentPreviewAmount() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+            </strong>
+          </div>
+          <div>
+            <span>Limite atual</span>
+            <strong>{{ selectedCardAvailableLimit() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+          </div>
+          <div [class.purchase-preview__danger]="availableAfterPurchase() < 0">
+            <span>Após a compra</span>
+            <strong>{{ availableAfterPurchase() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+          </div>
+        </section>
+
+        <footer>
+          <button class="button button--secondary" type="button" (click)="closePurchaseForm()">Cancelar</button>
+          <button class="button button--primary" type="submit" [disabled]="store.submitting() || purchaseForm.invalid">
+            <i class="ph ph-check"></i>
+            Confirmar compra
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (deletingPurchase()) {
+  <div class="modal-backdrop" (mousedown)="deletingPurchase.set(null)">
+    <section
+      class="confirm-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-purchase-title"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <h2 id="delete-purchase-title">Excluir compra parcelada?</h2>
+      <p>O compromisso deixará de consumir limite do cartão e não aparecerá mais na listagem.</p>
+      <footer>
+        <button class="button button--secondary" type="button" (click)="deletingPurchase.set(null)">Cancelar</button>
+        <button class="button button--danger" type="button" (click)="confirmDeletion()">
+          <i class="ph ph-trash"></i>
+          Excluir
+        </button>
+      </footer>
+    </section>
+  </div>
+}

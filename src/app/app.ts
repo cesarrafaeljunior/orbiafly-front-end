@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
-import { AppShell } from './layout/app-shell/app-shell';
+import { RouterOutlet } from '@angular/router';
+import { ToastContainer } from './shared/components/toast-container/toast-container';
 
 @Component({
-  imports: [AppShell],
+  imports: [RouterOutlet, ToastContainer],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',

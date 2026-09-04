@@ -58,18 +58,35 @@ Este documento registra apenas regras que ja podem ser afirmadas neste estagio. 
 - O usuario informa nome, bandeira, ultimos quatro digitos opcionais, limite total, dia de fechamento e dia de vencimento.
 - Ultimos quatro digitos devem conter exatamente 4 numeros quando informados.
 - O usuario nao edita limite utilizado nem limite disponivel.
-- Nesta versao, limite utilizado e zero e limite disponivel e igual ao limite total retornado pela API.
+- Limite utilizado e limite disponivel sao retornados pela API e derivados das compras parceladas nao excluidas.
 - Cartoes podem ser ativados, desativados, reativados e excluidos por soft delete.
 - Uma compra no cartao nao reduz o saldo de uma conta financeira.
 - O pagamento da fatura reduz a conta escolhida, mas nao cria uma nova despesa alem das compras ja registradas.
-- Faturas, compras, parcelamentos, pagamento de fatura, juros, cashback e notificacoes permanecem fora do escopo atual.
-- Regra futura: uma compra parcelada de R$ 3.000 em 10 parcelas de R$ 300 deve comprometer inicialmente R$ 3.000 do limite.
+- Compras parceladas podem ser cadastradas somente em cartoes ativos retornados pela API.
+- O valor total da compra compromete o limite do cartao, nao apenas uma parcela.
+- A tela mostra resumo de total comprometido, compras ativas, parcelas futuras e parcelas da competencia atual.
+- A busca considera descricao da compra e cartao; filtros locais separam todas, em andamento e finalizadas.
+- A regra de fechamento, vencimento, competencia das parcelas e arredondamento pertence ao backend.
+- Faturas, pagamento de fatura, juros, cashback, taxas, antecipacao de parcelas e notificacoes permanecem fora do escopo atual.
+
+## Emprestimos
+
+- Emprestimos cobrem dinheiro tomado pelo usuario e dinheiro emprestado a terceiros na mesma tela.
+- `BORROWED` e apresentado como valor a pagar; `LENT` e apresentado como valor a receber.
+- A busca considera nome e contraparte.
+- Filtros locais permitem todos, a pagar, a receber e quitados.
+- A tela exibe total que eu devo, total a receber, quantidade ativa e proximos compromissos previstos.
+- Saldo restante, progresso, proxima parcela e previsao de termino vêm do contrato da API.
+- Quando nao ha cronograma, a previsao exibida e "Sem previsão definida".
+- Registrar pagamento ou recebimento exige conta financeira ativa e mostra saldo atual e saldo apos lancamento como previa visual.
+- O backend permanece autoritativo sobre saldo final, debito, credito, parcelas e quitacao.
+- Cartoes, cobranca automatica, notificacoes, contratos, SAC/Price, renegociacao e juros avancados permanecem fora do escopo.
 
 ## Decisoes pendentes
 
 - Representacao decimal dedicada no frontend, caso calculos financeiros avancados sejam introduzidos.
-- Regras de arredondamento.
+- Regras de arredondamento avancadas fora do parcelamento atual.
 - Suporte a multiplas moedas.
 - Politica de exclusao de transacoes alem do estorno de pagamento implementado.
 - Fechamento mensal e eventuais ajustes retroativos.
-- Modelo completo de compras, faturas e parcelamentos de cartao.
+- Modelo completo de faturas e pagamento de cartao.

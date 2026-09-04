@@ -1,0 +1,62 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="register-title">
+    <div class="auth-card__brand" aria-hidden="true">
+      <span>O</span>
+    </div>
+
+    <header class="auth-card__header">
+      <p>Orbiafly</p>
+      <h1 id="register-title">Criar conta</h1>
+      <span>Separe seus dados financeiros em uma conta própria.</span>
+    </header>
+
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        <span>E-mail</span>
+        <i class="ph ph-envelope-simple" aria-hidden="true"></i>
+        <input
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          placeholder="voce@email.com"
+        />
+      </label>
+
+      <label>
+        <span>Usuário</span>
+        <i class="ph ph-user" aria-hidden="true"></i>
+        <input
+          type="text"
+          formControlName="username"
+          autocomplete="username"
+          placeholder="seuusuario"
+        />
+      </label>
+
+      <label>
+        <span>Senha</span>
+        <i class="ph ph-lock-key" aria-hidden="true"></i>
+        <input
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+          placeholder="Mínimo de 8 caracteres"
+        />
+      </label>
+
+      @if (error()) {
+        <p class="auth-form__error">Não foi possível criar a conta.</p>
+      }
+
+      <button class="button button--primary" type="submit" [disabled]="authStore.loading()">
+        <i class="ph ph-user-plus" aria-hidden="true"></i>
+        {{ authStore.loading() ? 'Criando...' : 'Criar conta' }}
+      </button>
+    </form>
+
+    <footer class="auth-card__footer">
+      <span>Já tem conta?</span>
+      <a routerLink="/login">Entrar</a>
+    </footer>
+  </section>
+</main>

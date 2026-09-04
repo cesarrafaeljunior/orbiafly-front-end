@@ -1,5 +1,6 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthStore } from '../../features/auth/services/auth-store';
 
 interface NavigationItem {
   label: string;
@@ -19,10 +20,14 @@ interface NavigationGroup {
   templateUrl: './sidebar.html',
 })
 export class Sidebar {
+  private readonly authStore = inject(AuthStore);
   readonly collapsed = input(false);
   readonly drawer = input(false);
   readonly closeRequested = output<void>();
   readonly toggleRequested = output<void>();
+  protected readonly user = this.authStore.user;
+  protected readonly isAdmin = this.authStore.isAdmin;
+  protected readonly userTitle = computed(() => this.user()?.username ?? 'Minha conta');
 
   protected readonly navigationGroups: NavigationGroup[] = [
     {
@@ -35,7 +40,14 @@ export class Sidebar {
         { label: 'Despesas fixas', path: '/despesas-fixas', icon: 'ph-receipt' },
         { label: 'Contas', path: '/contas', icon: 'ph-wallet' },
         { label: 'Cartões', path: '/cartoes', icon: 'ph-credit-card' },
+        { label: 'Compras parceladas', path: '/compras-parceladas', icon: 'ph-shopping-bag-open' },
+        { label: 'Empréstimos', path: '/emprestimos', icon: 'ph-hand-coins' },
       ],
     },
   ];
+
+  protected logout(): void {
+    this.closeRequested.emit();
+    this.authStore.logout();
+  }
 }

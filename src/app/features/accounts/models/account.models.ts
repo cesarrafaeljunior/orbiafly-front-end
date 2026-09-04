@@ -35,7 +35,7 @@ export interface FinancialTransaction {
   balanceEffect: number;
   description: string;
   occurredOn: string;
-  referenceType: 'FIXED_EXPENSE_OCCURRENCE' | null;
+  referenceType: 'FIXED_EXPENSE_OCCURRENCE' | 'LOAN_ENTRY' | null;
   referenceId: string | null;
   reversalOfId: string | null;
   createdAt: string;

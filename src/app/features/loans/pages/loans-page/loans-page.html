@@ -1,0 +1,442 @@
+<main class="loans-workspace">
+  <header class="page-heading">
+    <div>
+      <h1>Empréstimos</h1>
+      <p class="page-description">Acompanhe valores que você deve, tem a receber e os próximos pagamentos.</p>
+    </div>
+  </header>
+
+  @if (store.overview().loans.length > 0) {
+    <section class="loan-summary" aria-label="Resumo de empréstimos">
+      <article class="summary-card summary-card--borrowed">
+        <span>Total que eu devo</span>
+        <strong>{{ store.overview().totalBorrowedRemaining | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+        <small>saldo aberto a pagar</small>
+      </article>
+      <article class="summary-card summary-card--lent">
+        <span>Total a receber</span>
+        <strong>{{ store.overview().totalLentRemaining | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+        <small>saldo aberto de terceiros</small>
+      </article>
+      <article class="summary-card">
+        <span>Ativos</span>
+        <strong>{{ store.overview().activeLoanCount | number: '1.0-0' : 'pt-BR' }}</strong>
+        <small>empréstimos em andamento</small>
+      </article>
+      <article class="summary-card">
+        <span>Próximos</span>
+        <strong>{{ store.overview().upcomingEntryCount | number: '1.0-0' : 'pt-BR' }}</strong>
+        <small>com parcela prevista</small>
+      </article>
+    </section>
+
+    <section class="loan-toolbar" aria-label="Busca, filtros e ordenação">
+      <div class="loan-search">
+        <i class="ph ph-magnifying-glass loan-search__icon" aria-hidden="true"></i>
+        <input
+          type="search"
+          aria-label="Buscar empréstimos"
+          placeholder="Buscar por nome ou contraparte..."
+          [value]="searchTerm()"
+          (input)="setSearch($event)"
+        />
+      </div>
+
+      <div class="status-filter" aria-label="Filtrar empréstimos">
+        <button type="button" [class.status-filter__option--active]="filter() === 'ALL'" (click)="setFilter('ALL')">
+          Todos
+        </button>
+        <button type="button" [class.status-filter__option--active]="filter() === 'BORROWED'" (click)="setFilter('BORROWED')">
+          A pagar
+        </button>
+        <button type="button" [class.status-filter__option--active]="filter() === 'LENT'" (click)="setFilter('LENT')">
+          A receber
+        </button>
+        <button type="button" [class.status-filter__option--active]="filter() === 'COMPLETED'" (click)="setFilter('COMPLETED')">
+          Quitados
+        </button>
+      </div>
+
+      <label class="sort-control">
+        <span>Ordenar</span>
+        <select [value]="sort()" (change)="setSort($event)">
+          <option value="RECENT">Mais recentes</option>
+          <option value="REMAINING_DESC">Maior saldo</option>
+          <option value="REMAINING_ASC">Menor saldo</option>
+          <option value="NAME_ASC">Nome A-Z</option>
+          <option value="NAME_DESC">Nome Z-A</option>
+        </select>
+      </label>
+    </section>
+  }
+
+  @if (store.error()) {
+    <section class="feedback" role="alert">
+      <div>
+        <strong>Não foi possível carregar os empréstimos</strong>
+        <p>{{ store.error() }}</p>
+      </div>
+      <button class="button button--secondary" type="button" (click)="store.loadLoans()">Tentar novamente</button>
+    </section>
+  }
+
+  @if (store.loading()) {
+    <section class="loan-loading" aria-live="polite" aria-label="Carregando empréstimos">
+      @for (item of [1, 2, 3]; track item) {
+        <div></div>
+      }
+    </section>
+  } @else if (store.overview().loans.length === 0) {
+    <section class="empty-state">
+      <div class="empty-state__icon" aria-hidden="true">
+        <i class="ph ph-hand-coins"></i>
+      </div>
+      <h2>Nenhum empréstimo cadastrado</h2>
+      <p>Cadastre valores que você pegou emprestado ou emprestou para alguém.</p>
+      <button class="button button--primary" type="button" (click)="openCreate()">
+        <i class="ph ph-plus"></i>
+        Adicionar empréstimo
+      </button>
+    </section>
+  } @else if (filteredLoans().length === 0) {
+    <section class="empty-state empty-state--search">
+      <div class="empty-state__icon" aria-hidden="true">
+        <i class="ph ph-magnifying-glass"></i>
+      </div>
+      <h2>Nenhum empréstimo encontrado</h2>
+      <p>Nenhum empréstimo corresponde à busca ou aos filtros selecionados.</p>
+    </section>
+  } @else {
+    <section class="loan-list" aria-label="Lista de empréstimos">
+      @for (loan of filteredLoans(); track loan.id) {
+        <article
+          class="loan-card"
+          [class.loan-card--lent]="loan.direction === 'LENT'"
+          [class.loan-card--completed]="loan.status === 'COMPLETED'"
+        >
+          <header class="loan-card__header">
+            <div class="loan-identity">
+              <div class="loan-avatar" aria-hidden="true">
+                <i class="ph ph-hand-coins"></i>
+              </div>
+              <div>
+                <h2>{{ loan.name }}</h2>
+                <p>{{ loan.counterparty }}</p>
+              </div>
+            </div>
+
+            <span class="loan-pill" [class.loan-pill--lent]="loan.direction === 'LENT'">
+              {{ directionLabel(loan.direction) }}
+            </span>
+          </header>
+
+          <section class="loan-values">
+            <div>
+              <span>Total</span>
+              <strong>{{ loan.totalAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+            </div>
+            <div>
+              <span>{{ remainingLabel(loan.direction) }}</span>
+              <strong>{{ loan.remainingAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+            </div>
+          </section>
+
+          <section class="loan-progress">
+            <div>
+              <span>{{ completedCopy(loan) }}</span>
+              <strong>{{ loan.progressPercentage | number: '1.0-0' : 'pt-BR' }}%</strong>
+            </div>
+            <div class="progress-track" aria-label="Progresso do empréstimo">
+              <span [style.width.%]="loan.progressPercentage"></span>
+            </div>
+          </section>
+
+          <section class="loan-next">
+            <div>
+              <span>{{ loan.direction === 'BORROWED' ? 'Próxima parcela' : 'Próximo recebimento' }}</span>
+              <strong>{{ nextLabel(loan) }}</strong>
+            </div>
+            <div>
+              <span>Previsão de término</span>
+              <strong>{{ estimatedEndLabel(loan) }}</strong>
+            </div>
+          </section>
+
+          <footer class="loan-card__actions">
+            <span class="loan-status" [class.loan-status--completed]="loan.status === 'COMPLETED'">
+              <i
+                class="ph"
+                [class.ph-clock]="loan.status === 'ACTIVE'"
+                [class.ph-check-circle]="loan.status === 'COMPLETED'"
+                aria-hidden="true"
+              ></i>
+              {{ statusLabel(loan.status) }}
+            </span>
+            @if (loan.status === 'ACTIVE') {
+              <button class="action-button action-button--primary" type="button" (click)="openEntry(loan)">
+                <i class="ph ph-check-circle" aria-hidden="true"></i>
+                {{ actionLabel(loan) }}
+              </button>
+            }
+            <button class="action-button" type="button" (click)="detailsLoan.set(loan)">
+              <i class="ph ph-list-bullets" aria-hidden="true"></i>
+              Detalhes
+            </button>
+          </footer>
+        </article>
+      }
+
+      <button class="new-loan-card" type="button" (click)="openCreate()">
+        <div class="new-loan-card__icon" aria-hidden="true">
+          <i class="ph ph-plus"></i>
+        </div>
+        <strong>Adicionar empréstimo</strong>
+        <small>Cadastre uma dívida ou valor a receber.</small>
+      </button>
+    </section>
+  }
+</main>
+
+@if (showLoanForm()) {
+  <div class="modal-backdrop" (mousedown)="closeLoanForm()">
+    <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="loan-form-title" (mousedown)="$event.stopPropagation()">
+      <header>
+        <div>
+          <p class="eyebrow">Novo controle financeiro</p>
+          <h2 id="loan-form-title">Adicionar empréstimo</h2>
+        </div>
+        <button class="icon-button" type="button" aria-label="Fechar" (click)="closeLoanForm()">×</button>
+      </header>
+
+      <form [formGroup]="loanForm" (ngSubmit)="saveLoan()">
+        <div class="segmented-control" aria-label="Tipo de empréstimo">
+          <button type="button" [class.segmented-control__option--active]="loanForm.controls.direction.value === 'BORROWED'" (click)="loanForm.controls.direction.setValue('BORROWED')">
+            Peguei emprestado
+          </button>
+          <button type="button" [class.segmented-control__option--active]="loanForm.controls.direction.value === 'LENT'" (click)="loanForm.controls.direction.setValue('LENT')">
+            Emprestei
+          </button>
+        </div>
+
+        <label>
+          <span>Nome</span>
+          <input type="text" formControlName="name" maxlength="140" placeholder="Ex.: Empréstimo Nubank" />
+        </label>
+
+        <label>
+          <span>Contraparte</span>
+          <input type="text" formControlName="counterparty" maxlength="140" placeholder="Ex.: Nubank, Caixa, João" />
+        </label>
+
+        <div class="form-grid">
+          <label>
+            <span>Valor total</span>
+            <input type="text" inputmode="decimal" formControlName="totalAmount" appCurrencyMask />
+          </label>
+          <label>
+            <span>Data inicial</span>
+            <input type="date" formControlName="startDate" />
+          </label>
+        </div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" formControlName="hasInstallments" />
+          <span>Possui parcelamento definido</span>
+        </label>
+
+        @if (loanForm.controls.hasInstallments.value) {
+          <div class="form-grid">
+            <label>
+              <span>Quantidade</span>
+              <input type="number" formControlName="installmentCount" min="1" max="360" />
+            </label>
+            <label>
+              <span>Valor da parcela</span>
+              <input type="text" inputmode="decimal" formControlName="installmentAmount" appCurrencyMask />
+            </label>
+          </div>
+
+          <label>
+            <span>Primeiro vencimento</span>
+            <input type="date" formControlName="firstDueDate" />
+          </label>
+
+          <section class="preview-box">
+            <div>
+              <span>Prévia</span>
+              <strong>
+                {{ loanForm.controls.installmentCount.value }}x de
+                {{ (loanForm.controls.installmentAmount.value || installmentPreviewAmount()) | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+              </strong>
+            </div>
+            <div>
+              <span>Total informado</span>
+              <strong>{{ loanForm.controls.totalAmount.value | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+            </div>
+          </section>
+        }
+
+        <label>
+          <span>Taxa de juros</span>
+          <input type="text" formControlName="interestRate" maxlength="60" placeholder="Opcional, apenas informativo" />
+        </label>
+
+        <label>
+          <span>Observação</span>
+          <textarea formControlName="notes" maxlength="500" rows="3"></textarea>
+        </label>
+
+        <footer>
+          <button class="button button--secondary" type="button" (click)="closeLoanForm()">Cancelar</button>
+          <button class="button button--primary" type="submit" [disabled]="store.submitting() || loanForm.invalid">
+            <i class="ph ph-check"></i>
+            Salvar
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (entryLoan()) {
+  <div class="modal-backdrop" (mousedown)="closeEntry()">
+    <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="entry-form-title" (mousedown)="$event.stopPropagation()">
+      <header>
+        <div>
+          <p class="eyebrow">{{ directionLabel(entryLoan()!.direction) }}</p>
+          <h2 id="entry-form-title">{{ actionLabel(entryLoan()!) }}</h2>
+        </div>
+        <button class="icon-button" type="button" aria-label="Fechar" (click)="closeEntry()">×</button>
+      </header>
+
+      <form [formGroup]="entryForm" (ngSubmit)="saveEntry()">
+        <label>
+          <span>Conta financeira</span>
+          <select formControlName="financialAccountId" [disabled]="store.loadingAccounts() || store.activeAccounts().length === 0">
+            @for (account of store.activeAccounts(); track account.id) {
+              <option [value]="account.id">{{ account.name }}</option>
+            }
+          </select>
+          @if (!store.loadingAccounts() && store.activeAccounts().length === 0) {
+            <small>Nenhuma conta ativa disponível.</small>
+          }
+        </label>
+
+        <label>
+          <span>Valor</span>
+          <input type="text" inputmode="decimal" formControlName="amount" appCurrencyMask [readonly]="!!entryLoan()!.installmentCount" />
+        </label>
+
+        <label>
+          <span>Data</span>
+          <input type="date" formControlName="occurredOn" />
+        </label>
+
+        <section class="preview-box">
+          <div>
+            <span>Saldo atual</span>
+            <strong>{{ selectedAccountBalance() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+          </div>
+          <div>
+            <span>Após lançamento</span>
+            <strong>{{ selectedAccountBalanceAfter() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+          </div>
+        </section>
+
+        <footer>
+          <button class="button button--secondary" type="button" (click)="closeEntry()">Cancelar</button>
+          <button class="button button--primary" type="submit" [disabled]="store.submitting() || entryForm.invalid">
+            <i class="ph ph-check"></i>
+            Confirmar
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (detailsLoan()) {
+  <div class="modal-backdrop" (mousedown)="detailsLoan.set(null)">
+    <section class="details-modal" role="dialog" aria-modal="true" aria-labelledby="loan-details-title" (mousedown)="$event.stopPropagation()">
+      <header>
+        <div>
+          <p class="eyebrow">{{ directionLabel(detailsLoan()!.direction) }}</p>
+          <h2 id="loan-details-title">{{ detailsLoan()!.name }}</h2>
+        </div>
+        <button class="icon-button" type="button" aria-label="Fechar" (click)="detailsLoan.set(null)">×</button>
+      </header>
+
+      <section class="details-grid">
+        <div>
+          <span>Contraparte</span>
+          <strong>{{ detailsLoan()!.counterparty }}</strong>
+        </div>
+        <div>
+          <span>Saldo restante</span>
+          <strong>{{ detailsLoan()!.remainingAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+        </div>
+        <div>
+          <span>Progresso</span>
+          <strong>{{ detailsLoan()!.progressPercentage | number: '1.1-1' : 'pt-BR' }}%</strong>
+        </div>
+        <div>
+          <span>Previsão</span>
+          <strong>{{ estimatedEndLabel(detailsLoan()!) }}</strong>
+        </div>
+      </section>
+
+      @if (detailsLoan()!.installments.length > 0) {
+        <section class="detail-list">
+          <h3>Parcelas</h3>
+          @for (installment of detailsLoan()!.installments; track installment.id) {
+            <div class="detail-row">
+              <span>{{ installment.installmentNumber }}</span>
+              <strong>{{ installment.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+              <small>{{ installment.dueDate | date: 'dd MMM yyyy' : undefined : 'pt-BR' }}</small>
+              <small>{{ installment.status === 'COMPLETED' ? 'Concluída' : 'Pendente' }}</small>
+            </div>
+          }
+        </section>
+      }
+
+      <section class="detail-list">
+        <h3>Histórico</h3>
+        @if (detailsLoan()!.entries.length === 0) {
+          <p class="muted">Nenhum lançamento registrado.</p>
+        } @else {
+          @for (entry of detailsLoan()!.entries; track entry.id) {
+            <div class="detail-row">
+              <span>{{ entry.installmentNumber ?? '-' }}</span>
+              <strong>{{ entry.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+              <small>{{ entry.occurredOn | date: 'dd MMM yyyy' : undefined : 'pt-BR' }}</small>
+              <small>{{ entry.financialAccountName || 'Conta' }}</small>
+            </div>
+          }
+        }
+      </section>
+
+      <footer>
+        <button class="button button--danger" type="button" (click)="deletingLoan.set(detailsLoan()); detailsLoan.set(null)">
+          <i class="ph ph-trash"></i>
+          Excluir
+        </button>
+      </footer>
+    </section>
+  </div>
+}
+
+@if (deletingLoan()) {
+  <div class="modal-backdrop" (mousedown)="deletingLoan.set(null)">
+    <section class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-loan-title" (mousedown)="$event.stopPropagation()">
+      <h2 id="delete-loan-title">Excluir empréstimo?</h2>
+      <p>O empréstimo deixará de aparecer na listagem, mas as movimentações financeiras já registradas permanecem no histórico da conta.</p>
+      <footer>
+        <button class="button button--secondary" type="button" (click)="deletingLoan.set(null)">Cancelar</button>
+        <button class="button button--danger" type="button" (click)="confirmDeletion()">
+          <i class="ph ph-trash"></i>
+          Excluir
+        </button>
+      </footer>
+    </section>
+  </div>
+}

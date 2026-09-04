@@ -178,6 +178,22 @@ Registro leve de decisoes arquiteturais do Orbiafly. Nao e necessario seguir um 
 - Consequencias: erros estruturais de carregamento continuam inline; resultados de acoes usam toast global com temporizador visual pausavel em hover ou foco.
 - Status: aceita.
 
+## ORB - Compras parceladas no cartao
+
+- Decisao: criar uma feature Angular dedicada para compras parceladas, consumindo `/credit-card-purchases` e reutilizando o cliente de cartoes apenas para selecionar cartoes ativos.
+- Contexto: a tela precisa mostrar limite comprometido e progresso de parcelas sem implementar fatura completa.
+- Motivo: manter regras financeiras, fechamento e arredondamento no backend e deixar o frontend focado em cadastro, filtro e apresentacao.
+- Consequencias: filtros e ordenacao sao locais apos carregar o overview; o formulario exibe preview de limite, mas a confirmacao final depende da API.
+- Status: aceita.
+
+## ORB - Emprestimos
+
+- Decisao: criar uma feature Angular dedicada para Emprestimos, consumindo `/loans` e reutilizando `/accounts` apenas para selecionar contas ativas em pagamentos e recebimentos.
+- Contexto: a tela precisa acompanhar valores a pagar e a receber sem criar dashboards ou cadastros auxiliares.
+- Motivo: manter regras de saldo, parcelas, quitacao e movimentacao financeira no backend.
+- Consequencias: filtros e ordenacao sao locais; o modal de lancamento mostra preview de saldo, mas recarrega contas e emprestimos apos confirmacao.
+- Status: aceita.
+
 ## Mascara monetaria compartilhada
 
 - Decisao: usar uma diretiva compartilhada para formatar entradas monetarias em `pt-BR`/`BRL` durante a digitacao.
