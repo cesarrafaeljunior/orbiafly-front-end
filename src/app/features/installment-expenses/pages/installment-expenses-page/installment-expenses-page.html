@@ -1,0 +1,79 @@
+<section class="page-shell">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Parcelados</p>
+      <h1>Despesas parceladas</h1>
+      <p>Acompanhe compras parceladas e pague cada parcela pela conta correta.</p>
+    </div>
+    <div class="summary-card">
+      <span>Total pendente</span>
+      <strong>{{ totalPending() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+    </div>
+  </header>
+
+  <section class="content-grid">
+    <form class="form-panel" [formGroup]="form" (ngSubmit)="createPurchase()">
+      <h2>Nova despesa</h2>
+      <label><span>Descrição</span><input formControlName="description" type="text" /></label>
+      <label><span>Valor total</span><input appCurrencyMask formControlName="totalAmount" type="text" inputmode="numeric" /></label>
+      <div class="two-fields">
+        <label><span>Parcelas</span><input formControlName="installmentCount" type="number" min="1" max="120" /></label>
+        <label><span>Primeiro vencimento</span><input formControlName="firstInstallmentDate" type="date" /></label>
+      </div>
+      <button class="button button--primary" type="submit" [disabled]="submitting()">Criar parcelamento</button>
+    </form>
+
+    <div class="list-panel">
+      @if (loading()) {
+        <p class="empty-state">Carregando...</p>
+      } @else if (!purchases().length) {
+        <p class="empty-state">Nenhuma despesa parcelada cadastrada.</p>
+      } @else {
+        @for (purchase of purchases(); track purchase.id) {
+          <article class="purchase-card">
+            <button class="purchase-head" type="button" (click)="togglePurchase(purchase.id)">
+              <span>
+                <strong>{{ purchase.description }}</strong>
+                <small>{{ purchase.installmentCount }} parcelas desde {{ purchase.firstInstallmentDate | date: 'dd/MM/yyyy' }}</small>
+              </span>
+              <span class="amounts">
+                <strong>{{ purchase.pendingAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+                <small>pendente</small>
+              </span>
+              <i class="ph" [class.ph-caret-down]="expandedId() !== purchase.id" [class.ph-caret-up]="expandedId() === purchase.id" aria-hidden="true"></i>
+            </button>
+            @if (expandedId() === purchase.id) {
+              <div class="installments">
+                @for (installment of purchase.installments; track installment.id) {
+                  <div class="installment-row" [class.installment-row--paid]="installment.status === 'PAID'">
+                    <div>
+                      <strong>{{ installment.installmentNumber }}/{{ purchase.installmentCount }}</strong>
+                      <span>{{ installment.dueDate | date: 'dd/MM/yyyy' }}</span>
+                    </div>
+                    <strong>{{ installment.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+                    @if (installment.status === 'PAID') {
+                      <span class="badge badge--paid">Paga</span>
+                    } @else if (payingId() === installment.id) {
+                      <form class="payment-inline" [formGroup]="paymentForm" (ngSubmit)="confirmPayment(purchase, installment)">
+                        <select formControlName="financialAccountId">
+                          @for (account of activeAccounts(); track account.id) {
+                            <option [value]="account.id">{{ account.name }}</option>
+                          }
+                        </select>
+                        <input formControlName="paymentDate" type="date" />
+                        <button type="submit" title="Confirmar"><i class="ph ph-check" aria-hidden="true"></i></button>
+                        <button type="button" title="Cancelar" (click)="cancelPayment()"><i class="ph ph-x" aria-hidden="true"></i></button>
+                      </form>
+                    } @else {
+                      <button class="button button--ghost" type="button" (click)="startPayment(installment)">Pagar</button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </article>
+        }
+      }
+    </div>
+  </section>
+</section>

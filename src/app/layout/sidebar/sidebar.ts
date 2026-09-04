@@ -23,6 +23,8 @@ export class Sidebar {
   readonly drawer = input(false);
   readonly closeRequested = output<void>();
   readonly toggleRequested = output<void>();
+  readonly logoutRequested = output<void>();
+  readonly userName = input('Usuário');
 
   protected readonly navigationGroups: NavigationGroup[] = [
     {
@@ -35,6 +37,7 @@ export class Sidebar {
         { label: 'Despesas fixas', path: '/despesas-fixas', icon: 'ph-receipt' },
         { label: 'Contas', path: '/contas', icon: 'ph-wallet' },
         { label: 'Cartões', path: '/cartoes', icon: 'ph-credit-card' },
+        { label: 'Parcelados', path: '/parcelados', icon: 'ph-calendar-check' },
       ],
     },
   ];

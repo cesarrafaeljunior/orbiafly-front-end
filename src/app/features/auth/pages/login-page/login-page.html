@@ -1,0 +1,23 @@
+<section class="auth-page">
+  <div class="auth-panel">
+    <a class="auth-brand" routerLink="/login"><span>O</span>Orbiafly</a>
+    <header>
+      <p class="eyebrow">Acesso seguro</p>
+      <h1>Entrar na sua conta</h1>
+    </header>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        <span>E-mail ou usuário</span>
+        <input formControlName="login" type="text" autocomplete="username" />
+      </label>
+      <label>
+        <span>Senha</span>
+        <input formControlName="password" type="password" autocomplete="current-password" />
+      </label>
+      <button class="button button--primary" type="submit" [disabled]="submitting()">
+        Entrar
+      </button>
+    </form>
+    <p>Ainda não tem conta? <a routerLink="/cadastro">Criar conta</a></p>
+  </div>
+</section>

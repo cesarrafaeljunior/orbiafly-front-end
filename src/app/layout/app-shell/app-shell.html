@@ -1,30 +1,47 @@
-<div class="app-shell" [class.app-shell--collapsed]="sidebarCollapsed()">
-  <div class="desktop-sidebar">
-    <app-sidebar [collapsed]="sidebarCollapsed()" (toggleRequested)="toggleSidebar()" />
-  </div>
-
-  <header class="mobile-header">
-    <button type="button" aria-label="Abrir menu" (click)="openDrawer()">
-      <i class="ph ph-list" aria-hidden="true"></i>
-    </button>
-
-    <a class="mobile-brand" routerLink="/dashboard" aria-label="Orbiafly - início">
-      <span aria-hidden="true">O</span>
-      Orbiafly
-    </a>
-  </header>
-
-  @if (drawerOpen()) {
-    <div class="drawer-backdrop" (mousedown)="closeDrawer()">
-      <div class="drawer-panel" (mousedown)="$event.stopPropagation()">
-        <app-sidebar [drawer]="true" (closeRequested)="closeDrawer()" />
-      </div>
-    </div>
-  }
-
-  <main class="main-content" id="conteudo">
+@if (authScreen()) {
+  <main class="auth-content">
     <router-outlet />
   </main>
-
   <app-toast-container />
-</div>
+} @else {
+  <div class="app-shell" [class.app-shell--collapsed]="sidebarCollapsed()">
+    <div class="desktop-sidebar">
+      <app-sidebar
+        [collapsed]="sidebarCollapsed()"
+        [userName]="session.user()?.username ?? 'Usuário'"
+        (toggleRequested)="toggleSidebar()"
+        (logoutRequested)="logout()"
+      />
+    </div>
+
+    <header class="mobile-header">
+      <button type="button" aria-label="Abrir menu" (click)="openDrawer()">
+        <i class="ph ph-list" aria-hidden="true"></i>
+      </button>
+
+      <a class="mobile-brand" routerLink="/dashboard" aria-label="Orbiafly - início">
+        <span aria-hidden="true">O</span>
+        Orbiafly
+      </a>
+    </header>
+
+    @if (drawerOpen()) {
+      <div class="drawer-backdrop" (mousedown)="closeDrawer()">
+        <div class="drawer-panel" (mousedown)="$event.stopPropagation()">
+          <app-sidebar
+            [drawer]="true"
+            [userName]="session.user()?.username ?? 'Usuário'"
+            (closeRequested)="closeDrawer()"
+            (logoutRequested)="logout()"
+          />
+        </div>
+      </div>
+    }
+
+    <main class="main-content" id="conteudo">
+      <router-outlet />
+    </main>
+
+    <app-toast-container />
+  </div>
+}
