@@ -5,24 +5,14 @@
       <h1>Dashboard</h1>
     </div>
     <section class="period-control" aria-label="Competência selecionada">
-      <button
-        type="button"
-        title="Mês anterior"
-        aria-label="Mês anterior"
-        (click)="store.moveMonth(-1)"
-      >
+      <button type="button" title="Mês anterior" aria-label="Mês anterior" (click)="moveMonth(-1)">
         ‹
       </button>
       <div>
         <span>Competência</span>
         <strong>{{ store.periodLabel() }}</strong>
       </div>
-      <button
-        type="button"
-        title="Próximo mês"
-        aria-label="Próximo mês"
-        (click)="store.moveMonth(1)"
-      >
+      <button type="button" title="Próximo mês" aria-label="Próximo mês" (click)="moveMonth(1)">
         ›
       </button>
     </section>
@@ -154,8 +144,26 @@
               <h2>Gastos por categoria</h2>
             </div>
           </header>
-          <div class="category-chart" aria-label="Distribuição textual e visual por categoria">
-            @for (category of dashboard.categories; track category.categoryId) {
+          @if (categories().length > 3) {
+            <button
+              class="category-toggle"
+              type="button"
+              [attr.aria-expanded]="categoriesExpanded()"
+              aria-controls="dashboard-categories"
+              (click)="categoriesExpanded.set(!categoriesExpanded())"
+            >
+              {{ categoriesExpanded() ? 'Ver menos' : 'Ver todas (' + categories().length + ')' }}
+            </button>
+          }
+          <div
+            id="dashboard-categories"
+            class="category-chart"
+            [class.category-chart--expanded]="categoriesExpanded()"
+            [attr.tabindex]="categoriesExpanded() ? 0 : null"
+            role="region"
+            aria-label="Distribuição textual e visual por categoria"
+          >
+            @for (category of visibleCategories(); track category.categoryId) {
               <div class="category-row">
                 <div class="category-row__label">
                   <strong>{{ category.categoryName }}</strong>
@@ -187,12 +195,13 @@
               <p class="section-label">Agenda</p>
               <h2>Próximos vencimentos</h2>
             </div>
+            <a routerLink="/despesas-fixas">Ver todos</a>
           </header>
           @if (dashboard.upcomingExpenses.length === 0) {
             <p class="section-empty">Nenhum vencimento futuro pendente nesta competência.</p>
           } @else {
             <div class="expense-list">
-              @for (expense of dashboard.upcomingExpenses; track expense.occurrenceId) {
+              @for (expense of dashboard.upcomingExpenses.slice(0, 3); track expense.occurrenceId) {
                 <div class="expense-item">
                   <div>
                     <strong>{{ expense.name }}</strong

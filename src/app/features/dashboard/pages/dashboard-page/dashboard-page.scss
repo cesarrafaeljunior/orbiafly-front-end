@@ -506,3 +506,102 @@ progress::-moz-progress-bar {
     grid-row: 1 / 3;
   }
 }
+
+.category-toggle {
+  min-height: 44px;
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary-light-blue);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.category-chart--expanded {
+  max-height: 20rem;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+.category-row__label {
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+.dashboard-section header a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+  .dashboard-workspace {
+    padding-top: var(--space-4);
+  }
+  .dashboard-heading {
+    gap: var(--space-3);
+    padding-bottom: var(--space-4);
+  }
+  .summary-item {
+    min-width: 0;
+  }
+  .summary-item strong {
+    overflow-wrap: anywhere;
+  }
+  .summary-item:first-child {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding-block: var(--space-3);
+  }
+  .summary-item:first-child small {
+    grid-column: 1 / -1;
+  }
+  .dashboard-section header {
+    margin-bottom: var(--space-3);
+  }
+  .progress-section header {
+    margin-bottom: 0;
+  }
+  .progress-section progress {
+    margin-top: var(--space-3);
+  }
+  .progress-section > p,
+  .situation-counts {
+    display: none;
+  }
+  .situation-section {
+    padding-top: var(--space-2);
+  }
+  .situation-section header {
+    display: none;
+  }
+  .overdue {
+    flex-wrap: wrap;
+  }
+  .upcoming-section {
+    grid-row: 1;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-grid .category-section {
+    border-bottom: 0;
+  }
+  .largest-section h2 {
+    font-size: 1rem;
+  }
+  .largest-section .section-label,
+  .largest-item .position,
+  .largest-item .status,
+  .largest-item div span,
+  .largest-item:nth-child(n + 3) {
+    display: none;
+  }
+  .largest-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 44px;
+    padding-block: var(--space-2);
+  }
+  .largest-item > strong {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

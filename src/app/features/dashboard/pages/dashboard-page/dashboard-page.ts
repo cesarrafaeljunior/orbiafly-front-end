@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DashboardStore } from '../../services/dashboard-store';
 import { AccountsSummary } from '../../components/accounts-summary/accounts-summary';
@@ -13,6 +13,19 @@ import { AccountsSummary } from '../../components/accounts-summary/accounts-summ
 })
 export class DashboardPage implements OnInit {
   protected readonly store = inject(DashboardStore);
+
+  protected readonly categoriesExpanded = signal(false);
+  protected readonly categories = computed(() =>
+    [...(this.store.dashboard()?.categories ?? [])].sort((a, b) => b.totalAmount - a.totalAmount),
+  );
+  protected readonly visibleCategories = computed(() =>
+    this.categoriesExpanded() ? this.categories() : this.categories().slice(0, 3),
+  );
+
+  protected moveMonth(offset: number): void {
+    this.categoriesExpanded.set(false);
+    void this.store.moveMonth(offset);
+  }
 
   ngOnInit(): void {
     void this.store.initialize();

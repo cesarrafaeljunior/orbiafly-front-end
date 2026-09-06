@@ -9,7 +9,7 @@
   border-left: 3px solid var(--primary-light-blue);
   display: grid;
   gap: var(--space-5);
-  grid-template-columns: minmax(12rem, 1fr) minmax(16rem, 2fr) auto;
+  grid-template-columns: minmax(12rem, 1fr) minmax(0, 2fr);
   padding: var(--space-5);
 }
 
@@ -44,19 +44,57 @@
   white-space: nowrap;
 }
 
-@media (max-width: 48rem) {
-  .accounts-band {
-    align-items: start;
-    grid-template-columns: 1fr;
-  }
-
-  .account-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.accounts-overview {
+  min-width: 0;
+}
+.accounts-overview header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.accounts-overview header div {
+  display: grid;
+  gap: var(--space-1);
+}
+.account-list span {
+  overflow-wrap: anywhere;
 }
 
-@media (max-width: 30rem) {
+@media (max-width: 48rem) {
+  .accounts-band {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    margin-bottom: var(--space-4);
+  }
+  .accounts-band > div:first-child {
+    padding: var(--space-4);
+    border-left: 3px solid var(--primary-light-blue);
+    background: var(--surface);
+  }
+  .accounts-overview header {
+    margin-bottom: var(--space-2);
+  }
+  .accounts-band a {
+    font-size: 0.8125rem;
+    white-space: normal;
+  }
   .account-list {
-    grid-template-columns: 1fr;
+    display: flex;
+    overflow-x: auto;
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
+  .account-list span {
+    flex: 0 0 auto;
+    max-width: 80%;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
   }
 }

@@ -1,5 +1,5 @@
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, OnInit, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyMaskDirective } from '../../../../shared/directives/currency-mask.directive';
 import { ExpenseForm } from '../../components/expense-form/expense-form';
@@ -28,6 +28,84 @@ import { FixedExpensesStore } from '../../services/fixed-expenses-store';
 })
 export class FixedExpensesPage implements OnInit {
   protected readonly store = inject(FixedExpensesStore);
+  protected readonly filtersExpanded = signal(false);
+  protected readonly periodExpanded = signal(false);
+  protected readonly expandedActions = signal<string | null>(null);
+  protected readonly selectedMonth = new FormControl(this.store.month(), {
+    nonNullable: true,
+    validators: [Validators.required, Validators.min(1), Validators.max(12)],
+  });
+  protected readonly selectedYear = new FormControl(this.store.year(), {
+    nonNullable: true,
+    validators: [
+      Validators.required,
+      Validators.min(2000),
+      Validators.max(2200),
+      Validators.pattern(/^\d{4}$/),
+    ],
+  });
+  protected readonly months = [
+    'Janeiro',
+    'Fevereiro',
+    'Março',
+    'Abril',
+    'Maio',
+    'Junho',
+    'Julho',
+    'Agosto',
+    'Setembro',
+    'Outubro',
+    'Novembro',
+    'Dezembro',
+  ];
+  private readonly listQuery = computed(() =>
+    [
+      this.store.year(),
+      this.store.month(),
+      this.store.search(),
+      this.store.statusFilter(),
+      this.store.categoryFilter(),
+      this.store.sortOption(),
+    ].join('|'),
+  );
+  protected readonly visibleCount = linkedSignal({ source: this.listQuery, computation: () => 6 });
+  protected readonly visibleItems = computed(() =>
+    this.store.filteredItems().slice(0, this.visibleCount()),
+  );
+  protected readonly activeFilterCount = computed(
+    () =>
+      Number(this.store.statusFilter() !== 'ALL') +
+      Number(this.store.categoryFilter() !== 'ALL') +
+      Number(this.store.sortOption() !== 'DUE_ASC'),
+  );
+
+  protected togglePeriod(): void {
+    this.selectedMonth.setValue(this.store.month());
+    this.selectedYear.setValue(this.store.year());
+    this.periodExpanded.update((value) => !value);
+  }
+
+  protected applyPeriod(): void {
+    if (this.selectedMonth.invalid || this.selectedYear.invalid) {
+      return;
+    }
+    const offset =
+      (this.selectedYear.value - this.store.year()) * 12 +
+      Number(this.selectedMonth.value) -
+      this.store.month();
+    this.moveMonth(offset);
+  }
+
+  protected moveMonth(offset: number): void {
+    this.periodExpanded.set(false);
+    this.expandedActions.set(null);
+    void this.store.moveMonth(offset);
+  }
+
+  protected loadMore(): void {
+    this.visibleCount.update((count) => count + 6);
+  }
+
   protected readonly showExpenseForm = signal(false);
   protected readonly editingExpense = signal<MonthlyExpense | null>(null);
   protected readonly monthlyExpense = signal<MonthlyExpense | null>(null);

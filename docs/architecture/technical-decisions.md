@@ -201,3 +201,8 @@ Registro leve de decisoes arquiteturais do Orbiafly. Nao e necessario seguir um 
 - Motivo: evitar conversoes manuais por componente e manter o valor dos formularios como numero para os contratos atuais.
 - Consequencias: campos monetarios digitaveis devem usar a diretiva em vez de `type="number"`; valores negativos so devem ser habilitados quando fizerem sentido para o dominio.
 - Status: aceita.
+
+
+## 2026-09-05 — API de produção na mesma origem
+
+O build de produção substitui environment.ts por environment.production.ts e usa `/api/v1`. O navegador acessa o Nginx do frontend através do Caddy; o Nginx encaminha `/api/` ao backend privado. Isso permite LAN, Tailscale e acesso por porta sem fixar hostname no bundle. O ambiente de desenvolvimento existente foi preservado.

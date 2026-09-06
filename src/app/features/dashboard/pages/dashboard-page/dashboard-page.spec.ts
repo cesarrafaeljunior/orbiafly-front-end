@@ -63,4 +63,37 @@ describe('DashboardPage', () => {
     expect(element.textContent).toContain('Gerenciar despesas');
     expect(element.querySelector('.summary-band')).toBeNull();
   });
+  it('limits dynamic lists and allows categories to expand and collapse', async () => {
+    const categories = Array.from({ length: 8 }, (_, index) => ({
+      ...dashboardFixture.categories[0],
+      categoryId: `category-${index}`,
+      categoryName: `Categoria ${index}`,
+      totalAmount: index * 100,
+    }));
+    const fixture = await setup({
+      ...dashboardFixture,
+      categories,
+      upcomingExpenses: Array.from({ length: 8 }, (_, index) => ({
+        ...dashboardFixture.upcomingExpenses[0],
+        occurrenceId: `expense-${index}`,
+      })),
+    });
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelectorAll('.category-row')).toHaveLength(3);
+    expect(element.querySelector('.category-row')?.textContent).toContain('Categoria 7');
+    expect(element.querySelectorAll('.expense-item')).toHaveLength(3);
+    expect(element.querySelector('.upcoming-section a')?.getAttribute('href')).toBe(
+      '/despesas-fixas',
+    );
+    const toggle = element.querySelector<HTMLButtonElement>('.category-toggle')!;
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(element.querySelectorAll('.category-row')).toHaveLength(8);
+    expect(element.querySelector('.category-chart--expanded')?.getAttribute('tabindex')).toBe('0');
+    toggle.click();
+    fixture.detectChanges();
+    expect(element.querySelectorAll('.category-row')).toHaveLength(3);
+    expect(categories[0].categoryId).toBe('category-0');
+  });
 });

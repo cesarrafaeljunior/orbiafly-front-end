@@ -11,23 +11,41 @@
       <div class="summary-grid">
         <div class="metric metric--total">
           <span>Total do mês</span>
-          <strong>{{ store.summary().total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
-          <small>{{ store.summary().totalCount }} {{ store.summary().totalCount === 1 ? 'despesa' : 'despesas' }}</small>
+          <strong>{{
+            store.summary().total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}</strong>
+          <small
+            >{{ store.summary().totalCount }}
+            {{ store.summary().totalCount === 1 ? 'despesa' : 'despesas' }}</small
+          >
         </div>
         <div class="metric metric--paid">
           <span>Pago</span>
-          <strong>{{ store.summary().paidTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
-          <small>{{ store.summary().paidCount }} {{ store.summary().paidCount === 1 ? 'paga' : 'pagas' }}</small>
+          <strong>{{
+            store.summary().paidTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}</strong>
+          <small
+            >{{ store.summary().paidCount }}
+            {{ store.summary().paidCount === 1 ? 'paga' : 'pagas' }}</small
+          >
         </div>
         <div class="metric">
           <span>Pendente</span>
-          <strong>{{ store.summary().pendingTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
-          <small>{{ store.summary().pendingCount }} {{ store.summary().pendingCount === 1 ? 'pendente' : 'pendentes' }}</small>
+          <strong>{{
+            store.summary().pendingTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}</strong>
+          <small
+            >{{ store.summary().pendingCount }}
+            {{ store.summary().pendingCount === 1 ? 'pendente' : 'pendentes' }}</small
+          >
         </div>
         <div class="metric metric--progress">
           <span>Progresso</span>
           <strong>{{ store.summary().paidCount }} de {{ store.summary().totalCount }}</strong>
-          <small>{{ store.summary().paidPercentage | number: '1.1-1' : 'pt-BR' }}% do valor quitado</small>
+          <small
+            >{{ store.summary().paidPercentage | number: '1.1-1' : 'pt-BR' }}% do valor
+            quitado</small
+          >
         </div>
       </div>
 
@@ -38,17 +56,62 @@
   }
 
   <section class="period-bar" aria-label="Competência selecionada">
-    <button class="icon-button" type="button" title="Mês anterior" aria-label="Mês anterior" (click)="store.moveMonth(-1)">
+    <button
+      class="icon-button"
+      type="button"
+      title="Mês anterior"
+      aria-label="Mês anterior"
+      (click)="moveMonth(-1)"
+    >
       <i class="ph ph-caret-left" aria-hidden="true"></i>
     </button>
-    <div>
+    <button
+      class="period-trigger"
+      type="button"
+      [attr.aria-expanded]="periodExpanded()"
+      aria-controls="period-picker"
+      (click)="togglePeriod()"
+    >
       <span>Competência atual</span>
-      <strong>{{ store.periodLabel() }}</strong>
-    </div>
-    <button class="icon-button" type="button" title="Próximo mês" aria-label="Próximo mês" (click)="store.moveMonth(1)">
+      <strong>{{ store.periodLabel() }} <i class="ph ph-caret-down" aria-hidden="true"></i></strong>
+    </button>
+    <button
+      class="icon-button"
+      type="button"
+      title="Próximo mês"
+      aria-label="Próximo mês"
+      (click)="moveMonth(1)"
+    >
       <i class="ph ph-caret-right" aria-hidden="true"></i>
     </button>
   </section>
+
+  @if (periodExpanded()) {
+    <form
+      id="period-picker"
+      class="period-picker"
+      aria-label="Selecionar mês e ano"
+      (submit)="$event.preventDefault(); applyPeriod()"
+    >
+      <label
+        >Mês<select [formControl]="selectedMonth">
+          @for (month of months; track $index) {
+            <option [ngValue]="$index + 1">{{ month }}</option>
+          }
+        </select></label
+      >
+      <label
+        >Ano<input type="number" min="2000" max="2200" step="1" [formControl]="selectedYear"
+      /></label>
+      <button
+        class="button button--primary"
+        type="submit"
+        [disabled]="selectedMonth.invalid || selectedYear.invalid"
+      >
+        Aplicar
+      </button>
+    </form>
+  }
 
   @if (store.items().length > 0) {
     <section class="controls" aria-label="Busca, filtros e ordenação">
@@ -63,39 +126,77 @@
         />
       </div>
 
-      <div class="status-filter" aria-label="Filtrar despesas por status">
-        <button type="button" [class.status-filter__option--active]="store.statusFilter() === 'ALL'" (click)="setStatusFilter('ALL')">
-          Todas
-        </button>
-        <button type="button" [class.status-filter__option--active]="store.statusFilter() === 'PENDING'" (click)="setStatusFilter('PENDING')">
-          Pendentes
-        </button>
-        <button type="button" [class.status-filter__option--active]="store.statusFilter() === 'PAID'" (click)="setStatusFilter('PAID')">
-          Pagas
-        </button>
-        <button type="button" [class.status-filter__option--active]="store.statusFilter() === 'OVERDUE'" (click)="setStatusFilter('OVERDUE')">
-          Vencidas
-        </button>
+      <button
+        class="button button--secondary filters-toggle"
+        type="button"
+        [class.filters-toggle--active]="activeFilterCount() > 0"
+        [attr.aria-expanded]="filtersExpanded()"
+        aria-controls="expense-filters"
+        (click)="filtersExpanded.set(!filtersExpanded())"
+      >
+        <i class="ph ph-funnel" aria-hidden="true"></i> Filtros{{
+          activeFilterCount() ? ' (' + activeFilterCount() + ')' : ''
+        }}
+      </button>
+      <div
+        id="expense-filters"
+        class="filter-options"
+        [class.filter-options--expanded]="filtersExpanded()"
+      >
+        <div class="status-filter" aria-label="Filtrar despesas por status">
+          <button
+            type="button"
+            [class.status-filter__option--active]="store.statusFilter() === 'ALL'"
+            [attr.aria-pressed]="store.statusFilter() === 'ALL'"
+            (click)="setStatusFilter('ALL')"
+          >
+            Todas
+          </button>
+          <button
+            type="button"
+            [class.status-filter__option--active]="store.statusFilter() === 'PENDING'"
+            [attr.aria-pressed]="store.statusFilter() === 'PENDING'"
+            (click)="setStatusFilter('PENDING')"
+          >
+            Pendentes
+          </button>
+          <button
+            type="button"
+            [class.status-filter__option--active]="store.statusFilter() === 'PAID'"
+            [attr.aria-pressed]="store.statusFilter() === 'PAID'"
+            (click)="setStatusFilter('PAID')"
+          >
+            Pagas
+          </button>
+          <button
+            type="button"
+            [class.status-filter__option--active]="store.statusFilter() === 'OVERDUE'"
+            [attr.aria-pressed]="store.statusFilter() === 'OVERDUE'"
+            (click)="setStatusFilter('OVERDUE')"
+          >
+            Vencidas
+          </button>
+        </div>
+
+        <label class="category-control">
+          <span>Categoria</span>
+          <select [value]="store.categoryFilter()" (change)="setCategory($event)">
+            <option value="ALL">Todas as categorias</option>
+            @for (category of store.categories(); track category.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="sort-control">
+          <span>Ordenar</span>
+          <select [value]="store.sortOption()" (change)="setSort($event)">
+            @for (option of sortOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </label>
       </div>
-
-      <label class="category-control">
-        <span>Categoria</span>
-        <select [value]="store.categoryFilter()" (change)="setCategory($event)">
-          <option value="ALL">Todas as categorias</option>
-          @for (category of store.categories(); track category.id) {
-            <option [value]="category.id">{{ category.name }}</option>
-          }
-        </select>
-      </label>
-
-      <label class="sort-control">
-        <span>Ordenar</span>
-        <select [value]="store.sortOption()" (change)="setSort($event)">
-          @for (option of sortOptions; track option.value) {
-            <option [value]="option.value">{{ option.label }}</option>
-          }
-        </select>
-      </label>
     </section>
   }
 
@@ -144,7 +245,7 @@
       </section>
     } @else {
       <section class="expense-list" aria-label="Despesas da competência">
-        @for (item of store.filteredItems(); track item.occurrenceId) {
+        @for (item of visibleItems(); track item.occurrenceId) {
           <article class="expense-card" [class.expense-card--inactive]="!item.active">
             <div class="expense-identity">
               <div class="expense-icon" aria-hidden="true">
@@ -164,16 +265,33 @@
               <strong>{{ item.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
             </div>
 
-            <div class="due-info" [class.due-info--success]="dueTone(item) === 'success'" [class.due-info--warning]="dueTone(item) === 'warning'" [class.due-info--error]="dueTone(item) === 'error'">
-              <span><i class="ph ph-calendar-blank" aria-hidden="true"></i>{{ dueBadge(item) }}</span>
+            <div
+              class="due-info"
+              [class.due-info--success]="dueTone(item) === 'success'"
+              [class.due-info--warning]="dueTone(item) === 'warning'"
+              [class.due-info--error]="dueTone(item) === 'error'"
+            >
+              <span
+                ><i class="ph ph-calendar-blank" aria-hidden="true"></i>{{ dueBadge(item) }}</span
+              >
               <strong>{{ dueContext(item) }}</strong>
               @if (item.status === 'PAID') {
                 <small>{{ item.financialAccountName || 'Pagamento registrado' }}</small>
               }
             </div>
 
-            <div class="expense-status" [class.expense-status--paid]="item.status === 'PAID'" [class.expense-status--overdue]="item.overdue">
-              <i class="ph" [class.ph-check-circle]="item.status === 'PAID'" [class.ph-warning]="item.overdue" [class.ph-clock]="item.status === 'PENDING' && !item.overdue" aria-hidden="true"></i>
+            <div
+              class="expense-status"
+              [class.expense-status--paid]="item.status === 'PAID'"
+              [class.expense-status--overdue]="item.overdue"
+            >
+              <i
+                class="ph"
+                [class.ph-check-circle]="item.status === 'PAID'"
+                [class.ph-warning]="item.overdue"
+                [class.ph-clock]="item.status === 'PENDING' && !item.overdue"
+                aria-hidden="true"
+              ></i>
               {{ statusLabel(item) }}
             </div>
 
@@ -184,22 +302,62 @@
                 [disabled]="store.busyIds().has(item.occurrenceId)"
                 (click)="changePayment(item)"
               >
-                <i class="ph" [class.ph-check-circle]="item.status === 'PENDING'" [class.ph-arrow-counter-clockwise]="item.status === 'PAID'" aria-hidden="true"></i>
+                <i
+                  class="ph"
+                  [class.ph-check-circle]="item.status === 'PENDING'"
+                  [class.ph-arrow-counter-clockwise]="item.status === 'PAID'"
+                  aria-hidden="true"
+                ></i>
                 {{ item.status === 'PAID' ? 'Voltar para pendente' : 'Registrar pagamento' }}
               </button>
-              <button class="action-button" type="button" (click)="openMonthlyEdit(item)">
-                <i class="ph ph-calendar-dots" aria-hidden="true"></i>
-                Editar mês
+              <button
+                class="action-button actions-toggle"
+                type="button"
+                [attr.aria-label]="'Opções de ' + item.name"
+                [attr.aria-expanded]="expandedActions() === item.occurrenceId"
+                [attr.aria-controls]="'actions-' + item.occurrenceId"
+                (click)="
+                  expandedActions.set(
+                    expandedActions() === item.occurrenceId ? null : item.occurrenceId
+                  )
+                "
+              >
+                <i class="ph ph-dots-three" aria-hidden="true"></i> Opções
               </button>
-              <button class="action-button" type="button" (click)="openEdit(item)">
-                <i class="ph ph-pencil-simple" aria-hidden="true"></i>
-                Editar
-              </button>
+              <div
+                class="secondary-actions"
+                [id]="'actions-' + item.occurrenceId"
+                [class.secondary-actions--expanded]="expandedActions() === item.occurrenceId"
+              >
+                <button class="action-button" type="button" (click)="openMonthlyEdit(item)">
+                  <i class="ph ph-calendar-dots" aria-hidden="true"></i>
+                  Editar mês
+                </button>
+                <button class="action-button" type="button" (click)="openEdit(item)">
+                  <i class="ph ph-pencil-simple" aria-hidden="true"></i>
+                  Editar
+                </button>
+              </div>
             </footer>
           </article>
         }
 
-        <button class="new-expense-card" type="button" [disabled]="store.categories().length === 0" (click)="openCreate()">
+        <div class="list-pagination">
+          <span role="status"
+            >{{ visibleItems().length }} de {{ store.filteredItems().length }} despesas</span
+          >
+          @if (visibleItems().length < store.filteredItems().length) {
+            <button class="button button--secondary" type="button" (click)="loadMore()">
+              Carregar mais
+            </button>
+          }
+        </div>
+        <button
+          class="new-expense-card"
+          type="button"
+          [disabled]="store.categories().length === 0"
+          (click)="openCreate()"
+        >
           <div class="new-expense-card__icon" aria-hidden="true">
             <i class="ph ph-plus"></i>
           </div>
@@ -235,14 +393,23 @@
           <p class="eyebrow">Somente {{ store.periodLabel() }}</p>
           <h2 id="monthly-value-title">Editar valor mensal</h2>
         </div>
-        <button class="icon-button" type="button" title="Fechar" aria-label="Fechar" (click)="closeMonthlyEdit()">
+        <button
+          class="icon-button"
+          type="button"
+          title="Fechar"
+          aria-label="Fechar"
+          (click)="closeMonthlyEdit()"
+        >
           ×
         </button>
       </header>
       <form (submit)="$event.preventDefault(); saveMonthlyAmount()">
         <div class="monthly-context">
           <strong>{{ item.name }}</strong>
-          <span>Valor padrão: {{ item.defaultAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</span>
+          <span
+            >Valor padrão:
+            {{ item.defaultAmount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</span
+          >
         </div>
         <label class="amount-field">
           <span>Valor desta competência</span>

@@ -54,8 +54,11 @@ h1 {
   margin-top: var(--space-8);
   border: 1px solid color-mix(in srgb, var(--primary-dark-green) 35%, var(--border));
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--surface-elevated) 88%, transparent), var(--surface));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface-elevated) 88%, transparent),
+    var(--surface)
+  );
   overflow: hidden;
 }
 
@@ -225,7 +228,7 @@ h1 {
 }
 
 .status-filter button:hover,
-.status-filter__option--active {
+.status-filter button.status-filter__option--active {
   border-color: color-mix(in srgb, var(--primary-light-blue) 35%, var(--border));
   background: color-mix(in srgb, var(--primary-light-blue) 6%, var(--surface));
   color: var(--text-primary);
@@ -278,7 +281,10 @@ h1 {
 
 .expense-card {
   display: grid;
-  grid-template-columns: minmax(220px, 1.35fr) minmax(140px, 0.55fr) minmax(180px, 0.75fr) minmax(120px, auto);
+  grid-template-columns: minmax(220px, 1.35fr) minmax(140px, 0.55fr) minmax(180px, 0.75fr) minmax(
+      120px,
+      auto
+    );
   gap: var(--space-4);
   align-items: center;
   padding: var(--space-4);
@@ -610,95 +616,229 @@ h1 {
   }
 }
 
+.period-trigger {
+  display: grid;
+  gap: var(--space-1);
+  min-height: 44px;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.period-trigger:hover {
+  background: var(--surface-elevated);
+}
+.period-picker {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.period-picker label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--text-muted);
+}
+.period-picker select,
+.period-picker input {
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+}
+.filter-options {
+  display: contents;
+}
+.filters-toggle,
+.actions-toggle {
+  display: none;
+}
+.secondary-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+.list-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
 @media (max-width: 768px) {
   .workspace {
     width: min(100% - 32px, var(--page-max-width));
-    padding-top: var(--space-6);
+    padding-top: var(--space-4);
   }
-
-  .summary-grid,
-  .expense-card {
-    grid-template-columns: 1fr;
+  .page-description {
+    font-size: 0.875rem;
   }
-
+  .monthly-panel {
+    margin-top: var(--space-4);
+  }
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .metric {
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
+    padding: var(--space-3);
   }
-
-  .metric:last-child {
-    border-bottom: 0;
+  .metric strong {
+    font-size: 1.25rem;
   }
-
+  .metric small {
+    font-size: 0.75rem;
+  }
   .period-bar {
     width: 100%;
     justify-content: space-between;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
   }
-
-  .period-bar div {
+  .period-trigger {
     min-width: 0;
   }
-
-  .due-info {
-    padding-left: 0;
-    padding-top: var(--space-3);
-    border-left: 0;
-    border-top: 2px solid var(--border);
+  .period-bar strong {
+    font-size: 1rem;
   }
-
-  .due-info--success {
-    border-top-color: var(--success);
-  }
-
-  .due-info--warning {
-    border-top-color: var(--warning);
-  }
-
-  .due-info--error {
-    border-top-color: var(--error);
-  }
-
-  .expense-status {
-    width: max-content;
-  }
-
-  .expense-actions {
+  .period-picker {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
-
-  .expense-actions .action-button {
-    min-height: 42px;
+  .period-picker button {
+    grid-column: 1 / -1;
   }
-}
-
-@media (max-width: 390px) {
-  .workspace {
-    width: min(100% - 24px, var(--page-max-width));
+  .controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
   }
-
+  .filters-toggle {
+    display: inline-flex;
+    min-height: 46px;
+    padding-inline: var(--space-3);
+  }
+  .filters-toggle--active {
+    color: var(--primary-light-blue);
+    border-color: var(--primary-light-blue);
+  }
+  .filter-options {
+    display: none;
+  }
+  .filter-options--expanded {
+    display: grid;
+    grid-column: 1 / -1;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+  }
   .status-filter {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .status-filter button,
-  .category-control,
-  .category-control select,
-  .sort-control,
-  .sort-control select,
-  .expense-actions .action-button,
-  .new-expense-card {
-    width: 100%;
+  .status-filter button {
+    min-height: 44px;
   }
-
   .category-control,
   .sort-control {
     display: grid;
+    grid-template-columns: 1fr;
+    min-width: 0;
   }
-
-  .expense-card,
-  .metric {
-    padding: var(--space-4);
+  .category-control select,
+  .sort-control select {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+  .competence-heading {
+    margin-top: var(--space-3);
+  }
+  .expense-list {
+    margin-top: var(--space-2);
+  }
+  .expense-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3);
+  }
+  .expense-icon,
+  .expense-amount > span {
+    display: none;
+  }
+  .expense-identity h2 {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .expense-identity span,
+  .due-info small {
+    overflow-wrap: anywhere;
+  }
+  .expense-amount {
+    text-align: right;
+    max-width: 10rem;
+  }
+  .expense-amount strong {
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+  }
+  .due-info {
+    padding-left: var(--space-2);
+  }
+  .due-info strong {
+    font-size: 0.8125rem;
+  }
+  .expense-status {
+    justify-self: end;
+    min-height: 28px;
+    padding-inline: var(--space-2);
+  }
+  .expense-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-top: var(--space-2);
+  }
+  .expense-actions .action-button {
+    min-height: 44px;
+    padding-inline: var(--space-2);
+  }
+  .actions-toggle {
+    display: inline-flex;
+  }
+  .secondary-actions {
+    display: none;
+  }
+  .secondary-actions--expanded {
+    display: flex;
+    flex-wrap: wrap;
+    grid-column: 1 / -1;
+  }
+  .secondary-actions .action-button {
+    flex: 1;
+  }
+  .new-expense-card {
+    display: flex;
+    flex-wrap: wrap;
+    min-height: 44px;
+    padding: var(--space-3);
+  }
+  .new-expense-card__icon {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
   }
 }
