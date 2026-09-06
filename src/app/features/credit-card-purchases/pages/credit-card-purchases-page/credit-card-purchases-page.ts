@@ -1,20 +1,18 @@
-import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
+import { Component, computed, inject, linkedSignal, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyMaskDirective } from '../../../../shared/directives/currency-mask.directive';
 import { CREDIT_CARD_BRAND_LABELS } from '../../../credit-cards/models/credit-card.models';
 import {
-  CreditCardPurchase,
+  CreditCardInstallmentStatusFilter,
+  CreditCardMonthlyPurchaseInstallment,
   CreditCardPurchasePayload,
-  CreditCardPurchaseStatus,
+  CreditCardPurchaseSortOption,
 } from '../../models/credit-card-purchase.models';
 import { CreditCardPurchasesStore } from '../../services/credit-card-purchases-store';
 
-type PurchaseStatusFilter = 'ALL' | CreditCardPurchaseStatus;
-type PurchaseSortOption = 'RECENT' | 'AMOUNT_DESC' | 'AMOUNT_ASC' | 'NAME_ASC' | 'NAME_DESC';
-
 @Component({
-  imports: [CurrencyMaskDirective, CurrencyPipe, DatePipe, DecimalPipe, ReactiveFormsModule],
+  imports: [CurrencyMaskDirective, CurrencyPipe, DecimalPipe, ReactiveFormsModule],
   providers: [CreditCardPurchasesStore],
   selector: 'app-credit-card-purchases-page',
   styleUrl: './credit-card-purchases-page.scss',
@@ -23,11 +21,49 @@ type PurchaseSortOption = 'RECENT' | 'AMOUNT_DESC' | 'AMOUNT_ASC' | 'NAME_ASC' |
 export class CreditCardPurchasesPage implements OnInit {
   protected readonly store = inject(CreditCardPurchasesStore);
   protected readonly brandLabels = CREDIT_CARD_BRAND_LABELS;
-  protected readonly searchTerm = signal('');
-  protected readonly statusFilter = signal<PurchaseStatusFilter>('ALL');
-  protected readonly sortOption = signal<PurchaseSortOption>('RECENT');
   protected readonly showPurchaseForm = signal(false);
-  protected readonly deletingPurchase = signal<CreditCardPurchase | null>(null);
+  protected readonly deletingPurchase = signal<CreditCardMonthlyPurchaseInstallment | null>(null);
+  protected readonly monthlyInstallment = signal<CreditCardMonthlyPurchaseInstallment | null>(null);
+  protected readonly periodExpanded = signal(false);
+  protected readonly selectedMonth = new FormControl(this.store.month(), {
+    nonNullable: true,
+    validators: [Validators.required, Validators.min(1), Validators.max(12)],
+  });
+  protected readonly selectedYear = new FormControl(this.store.year(), {
+    nonNullable: true,
+    validators: [Validators.required, Validators.min(2000), Validators.max(2200), Validators.pattern(/^\d{4}$/)],
+  });
+  protected readonly monthlyAmount = new FormControl(0, {
+    nonNullable: true,
+    validators: [Validators.required, Validators.min(0.01)],
+  });
+  protected readonly months = [
+    'Janeiro',
+    'Fevereiro',
+    'Março',
+    'Abril',
+    'Maio',
+    'Junho',
+    'Julho',
+    'Agosto',
+    'Setembro',
+    'Outubro',
+    'Novembro',
+    'Dezembro',
+  ];
+  protected readonly sortOptions: { value: CreditCardPurchaseSortOption; label: string }[] = [
+    { value: 'DUE_ASC', label: 'Vencimento mais próximo' },
+    { value: 'DUE_DESC', label: 'Vencimento mais distante' },
+    { value: 'AMOUNT_DESC', label: 'Maior valor' },
+    { value: 'AMOUNT_ASC', label: 'Menor valor' },
+    { value: 'NAME_ASC', label: 'Nome A-Z' },
+    { value: 'NAME_DESC', label: 'Nome Z-A' },
+  ];
+  private readonly listQuery = computed(() =>
+    [this.store.year(), this.store.month(), this.store.search(), this.store.statusFilter(), this.store.sortOption()].join('|'),
+  );
+  protected readonly visibleCount = linkedSignal({ source: this.listQuery, computation: () => 6 });
+  protected readonly visibleItems = computed(() => this.store.filteredItems().slice(0, this.visibleCount()));
 
   protected readonly purchaseForm = new FormGroup({
     description: new FormControl('', {
@@ -75,46 +111,28 @@ export class CreditCardPurchasesPage implements OnInit {
   });
   protected readonly selectedCardAvailableLimit = computed(() => this.selectedCard()?.availableLimit ?? 0);
 
-  protected readonly filteredPurchases = computed(() => {
-    const query = this.searchTerm().trim().toLocaleLowerCase('pt-BR');
-    const status = this.statusFilter();
-    const sort = this.sortOption();
-
-    return this.store
-      .overview()
-      .purchases.filter((purchase) => {
-        if (status !== 'ALL' && purchase.status !== status) {
-          return false;
-        }
-        if (!query) {
-          return true;
-        }
-        const searchable = [purchase.description, purchase.creditCardName, this.brandLabels[purchase.creditCardBrand]]
-          .filter(Boolean)
-          .join(' ')
-          .toLocaleLowerCase('pt-BR');
-        return searchable.includes(query);
-      })
-      .sort((left, right) => {
-        switch (sort) {
-          case 'AMOUNT_DESC':
-            return right.totalAmount - left.totalAmount;
-          case 'AMOUNT_ASC':
-            return left.totalAmount - right.totalAmount;
-          case 'NAME_ASC':
-            return left.description.localeCompare(right.description, 'pt-BR');
-          case 'NAME_DESC':
-            return right.description.localeCompare(left.description, 'pt-BR');
-          case 'RECENT':
-          default:
-            return new Date(right.purchaseDate).getTime() - new Date(left.purchaseDate).getTime();
-        }
-      });
-  });
-
   async ngOnInit(): Promise<void> {
     await this.store.initialize();
     this.selectDefaultCard();
+  }
+
+  protected togglePeriod(): void {
+    this.selectedMonth.setValue(this.store.month());
+    this.selectedYear.setValue(this.store.year());
+    this.periodExpanded.update((value) => !value);
+  }
+
+  protected applyPeriod(): void {
+    if (this.selectedMonth.invalid || this.selectedYear.invalid) {
+      return;
+    }
+    const offset = (this.selectedYear.value - this.store.year()) * 12 + Number(this.selectedMonth.value) - this.store.month();
+    this.moveMonth(offset);
+  }
+
+  protected moveMonth(offset: number): void {
+    this.periodExpanded.set(false);
+    void this.store.moveMonth(offset);
   }
 
   protected openCreate(): void {
@@ -151,51 +169,77 @@ export class CreditCardPurchasesPage implements OnInit {
     }
   }
 
+  protected openMonthlyEdit(item: CreditCardMonthlyPurchaseInstallment): void {
+    this.monthlyInstallment.set(item);
+    this.monthlyAmount.setValue(item.amount);
+  }
+
+  protected closeMonthlyEdit(): void {
+    this.monthlyInstallment.set(null);
+    this.monthlyAmount.reset(0);
+  }
+
+  protected async saveMonthlyAmount(): Promise<void> {
+    const item = this.monthlyInstallment();
+    if (!item || this.monthlyAmount.invalid) {
+      this.monthlyAmount.markAsTouched();
+      return;
+    }
+    if (await this.store.updateAmount(item, this.monthlyAmount.value)) {
+      this.closeMonthlyEdit();
+    }
+  }
+
   protected async confirmDeletion(): Promise<void> {
-    const purchase = this.deletingPurchase();
-    if (purchase && (await this.store.delete(purchase.id))) {
+    const item = this.deletingPurchase();
+    if (item && (await this.store.delete(item.purchaseId))) {
       this.deletingPurchase.set(null);
     }
   }
 
-  protected updateSearch(event: Event): void {
-    this.searchTerm.set((event.target as HTMLInputElement).value);
+  protected setSearch(event: Event): void {
+    this.store.search.set((event.target as HTMLInputElement).value);
   }
 
-  protected changeStatusFilter(filter: PurchaseStatusFilter): void {
-    this.statusFilter.set(filter);
+  protected setStatusFilter(filter: CreditCardInstallmentStatusFilter): void {
+    this.store.statusFilter.set(filter);
   }
 
-  protected changeSort(event: Event): void {
-    this.sortOption.set((event.target as HTMLSelectElement).value as PurchaseSortOption);
+  protected setSort(event: Event): void {
+    this.store.sortOption.set((event.target as HTMLSelectElement).value as CreditCardPurchaseSortOption);
   }
 
-  protected progressPercentage(purchase: CreditCardPurchase): number {
-    if (purchase.installmentCount <= 0) {
-      return 0;
+  protected loadMore(): void {
+    this.visibleCount.update((count) => count + 6);
+  }
+
+  protected changePayment(item: CreditCardMonthlyPurchaseInstallment): void {
+    void this.store.toggleStatus(item);
+  }
+
+  protected dueBadge(item: CreditCardMonthlyPurchaseInstallment): string {
+    return this.formatDayMonth(new Date(`${item.dueDate}T00:00:00Z`));
+  }
+
+  protected paymentLabel(item: CreditCardMonthlyPurchaseInstallment): string {
+    return item.status === 'PAID' ? 'Pago neste mês' : 'Pendente neste mês';
+  }
+
+  protected endingLabel(item: CreditCardMonthlyPurchaseInstallment): string {
+    const month = this.monthLabel(item.endingYear, item.endingMonth);
+    if (item.monthsUntilEnd === 0) {
+      return `Termina em ${month}`;
     }
-    return Math.min(100, (purchase.completedInstallmentCount / purchase.installmentCount) * 100);
-  }
-
-  protected purchaseStatusLabel(status: CreditCardPurchaseStatus): string {
-    return status === 'FINALIZADA' ? 'Finalizada' : 'Em andamento';
-  }
-
-  protected nextInstallmentLabel(purchase: CreditCardPurchase): string {
-    if (!purchase.nextInstallment) {
-      return 'Ciclo concluído';
+    if (item.monthsUntilEnd === 1) {
+      return `Termina no próximo mês (${month})`;
     }
-    return `Próxima em ${this.monthLabel(
-      purchase.nextInstallment.competenceYear,
-      purchase.nextInstallment.competenceMonth,
-    )}`;
+    return `Termina em ${item.monthsUntilEnd} meses (${month})`;
   }
 
   protected monthLabel(year: number, month: number): string {
-    return new Intl.DateTimeFormat('pt-BR', {
-      month: 'long',
-      year: 'numeric',
-    }).format(new Date(year, month - 1, 1));
+    const label = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+      .format(new Date(Date.UTC(year, month - 1, 1)));
+    return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
   protected cardOptionLabel(cardId: string): string {
@@ -205,6 +249,10 @@ export class CreditCardPurchasesPage implements OnInit {
     }
     const suffix = card.lastFourDigits ? ` - **** ${card.lastFourDigits}` : '';
     return `${card.name} - ${this.brandLabels[card.brand]}${suffix}`;
+  }
+
+  private formatDayMonth(date: Date): string {
+    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', timeZone: 'UTC' }).format(date);
   }
 
   private selectDefaultCard(): void {
