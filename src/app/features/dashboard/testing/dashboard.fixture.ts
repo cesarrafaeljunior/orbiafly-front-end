@@ -20,6 +20,29 @@ export const dashboardFixture: MonthlyDashboard = {
     paidPercentage: 48,
   },
   overdue: { count: 1, amount: 1000 },
+  projection: {
+    year: 2026,
+    month: 8,
+    currentBalance: 3700,
+    expectedIncomeTotal: 0,
+    expectedExpenseTotal: 1300,
+    projectedFinalBalance: 2400,
+    minimumProjectedBalance: 2400,
+    minimumProjectedBalanceDate: '2026-08-20',
+    healthLevel: 'COMFORTABLE',
+    insight: 'Seu menor saldo previsto é de 2400.00 em 20/08.',
+    events: [
+      {
+        date: '2026-08-20',
+        description: 'Energia',
+        amount: 250,
+        direction: 'OUTFLOW',
+        sourceType: 'FIXED_EXPENSE',
+        sourceId: 'occurrence-energy',
+        projectedBalanceAfterEvent: 3450,
+      },
+    ],
+  },
   upcomingExpenses: [
     {
       occurrenceId: 'occurrence-energy',

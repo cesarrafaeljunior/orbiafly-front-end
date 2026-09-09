@@ -1,7 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { ApiProblem, CreditCard, CreditCardOverview } from '../../credit-cards/models/credit-card.models';
+import { FinancialAccount, FinancialAccountsOverview } from '../../accounts/models/account.models';
+import { AccountsApi } from '../../accounts/services/accounts-api';
+import {
+  ApiProblem,
+  CreditCard,
+  CreditCardOverview,
+} from '../../credit-cards/models/credit-card.models';
 import { CreditCardsApi } from '../../credit-cards/services/credit-cards-api';
 import { ToastService } from '../../../shared/services/toast.service';
 import {
@@ -9,6 +15,7 @@ import {
   CreditCardInstallmentStatusFilter,
   CreditCardMonthlyPurchaseInstallment,
   CreditCardMonthlyPurchaseSummary,
+  CreditCardPurchase,
   CreditCardPurchasePayload,
   CreditCardPurchaseSortOption,
 } from '../models/credit-card-purchase.models';
@@ -34,6 +41,7 @@ const EMPTY_SUMMARY: CreditCardMonthlyPurchaseSummary = {
 export class CreditCardPurchasesStore {
   private readonly api = inject(CreditCardPurchasesApi);
   private readonly cardsApi = inject(CreditCardsApi);
+  private readonly accountsApi = inject(AccountsApi);
   private readonly toastService = inject(ToastService);
   private requestSequence = 0;
 
@@ -49,8 +57,14 @@ export class CreditCardPurchasesStore {
     activeCount: 0,
     cards: [],
   });
+  readonly accountsOverview = signal<FinancialAccountsOverview>({
+    totalAvailableBalance: 0,
+    activeCount: 0,
+    accounts: [],
+  });
   readonly loading = signal(true);
   readonly loadingCards = signal(true);
+  readonly loadingAccounts = signal(true);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
   readonly busyIds = signal<ReadonlySet<string>>(new Set());
@@ -59,6 +73,9 @@ export class CreditCardPurchasesStore {
   readonly sortOption = signal<CreditCardPurchaseSortOption>('DUE_ASC');
 
   readonly activeCards = computed(() => this.cardsOverview().cards.filter((card) => card.active));
+  readonly activeAccounts = computed(() =>
+    this.accountsOverview().accounts.filter((account) => account.active),
+  );
 
   readonly periodLabel = computed(() => {
     const label = monthFormatter.format(new Date(Date.UTC(this.year(), this.month() - 1, 1)));
@@ -85,7 +102,7 @@ export class CreditCardPurchasesStore {
   });
 
   async initialize(): Promise<void> {
-    await Promise.all([this.loadMonth(), this.loadCards()]);
+    await Promise.all([this.loadMonth(), this.loadCards(), this.loadAccounts()]);
   }
 
   async loadMonth(): Promise<void> {
@@ -114,9 +131,24 @@ export class CreditCardPurchasesStore {
     try {
       this.cardsOverview.set(await firstValueFrom(this.cardsApi.getOverview(false)));
     } catch (error: unknown) {
-      this.toastService.error(this.errorMessage(error, 'Não foi possível carregar os cartões ativos.'));
+      this.toastService.error(
+        this.errorMessage(error, 'Não foi possível carregar os cartões ativos.'),
+      );
     } finally {
       this.loadingCards.set(false);
+    }
+  }
+
+  async loadAccounts(): Promise<void> {
+    this.loadingAccounts.set(true);
+    try {
+      this.accountsOverview.set(await firstValueFrom(this.accountsApi.getOverview(false)));
+    } catch (error: unknown) {
+      this.toastService.error(
+        this.errorMessage(error, 'Não foi possível carregar as contas ativas.'),
+      );
+    } finally {
+      this.loadingAccounts.set(false);
     }
   }
 
@@ -131,10 +163,21 @@ export class CreditCardPurchasesStore {
     return this.runSubmission(
       async () => {
         await firstValueFrom(this.api.create(payload));
-        await Promise.all([this.loadMonth(), this.loadCards()]);
+        await Promise.all([this.loadMonth(), this.loadCards(), this.loadAccounts()]);
       },
-      'Compra parcelada registrada com sucesso.',
-      'Não foi possível registrar a compra parcelada.',
+      'Compra registrada com sucesso.',
+      'Não foi possível registrar a compra.',
+    );
+  }
+
+  async updatePurchase(id: string, payload: CreditCardPurchasePayload): Promise<boolean> {
+    return this.runSubmission(
+      async () => {
+        await firstValueFrom(this.api.update(id, payload));
+        await Promise.all([this.loadMonth(), this.loadCards(), this.loadAccounts()]);
+      },
+      'Compra atualizada com sucesso.',
+      'Não foi possível atualizar a compra.',
     );
   }
 
@@ -146,8 +189,38 @@ export class CreditCardPurchasesStore {
         this.recalculateSummary();
         await this.loadCards();
       },
-      'Valor desta parcela atualizado.',
-      'Não foi possível atualizar a parcela.',
+      'Compra atualizada com sucesso.',
+      'Não foi possível atualizar a compra.',
+    );
+  }
+
+  async getPurchase(id: string): Promise<CreditCardPurchase | null> {
+    try {
+      return await firstValueFrom(this.api.get(id));
+    } catch (error: unknown) {
+      this.toastService.error(this.errorMessage(error, 'Não foi possível carregar as parcelas da compra.'));
+      return null;
+    }
+  }
+
+  async updatePurchaseInstallmentStatuses(
+    purchase: CreditCardPurchase,
+    paidInstallmentIds: ReadonlySet<string>,
+  ): Promise<boolean> {
+    return this.runSubmission(
+      async () => {
+        const changes = purchase.installments.filter((installment) => {
+          const nextStatus: CreditCardInstallmentStatus = paidInstallmentIds.has(installment.id) ? 'PAID' : 'PENDING';
+          return installment.status !== nextStatus;
+        });
+        for (const installment of changes) {
+          const nextStatus: CreditCardInstallmentStatus = paidInstallmentIds.has(installment.id) ? 'PAID' : 'PENDING';
+          await firstValueFrom(this.api.updateInstallmentStatus(installment.id, nextStatus));
+        }
+        await Promise.all([this.loadMonth(), this.loadCards()]);
+      },
+      'Pagamentos atualizados com sucesso.',
+      'Não foi possível atualizar os pagamentos.',
     );
   }
 
@@ -183,15 +256,19 @@ export class CreditCardPurchasesStore {
     return this.runSubmission(
       async () => {
         await firstValueFrom(this.api.delete(id));
-        await Promise.all([this.loadMonth(), this.loadCards()]);
+        await Promise.all([this.loadMonth(), this.loadCards(), this.loadAccounts()]);
       },
-      'Compra parcelada excluída com sucesso.',
-      'Não foi possível excluir a compra parcelada.',
+      'Compra excluída com sucesso.',
+      'Não foi possível excluir a compra.',
     );
   }
 
   cardById(id: string): CreditCard | null {
     return this.activeCards().find((card) => card.id === id) ?? null;
+  }
+
+  accountById(id: string): FinancialAccount | null {
+    return this.activeAccounts().find((account) => account.id === id) ?? null;
   }
 
   clearFilters(): void {

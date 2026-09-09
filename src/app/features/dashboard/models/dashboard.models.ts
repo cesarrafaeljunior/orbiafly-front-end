@@ -52,11 +52,52 @@ export interface DashboardCategory {
   percentage: number | null;
 }
 
+export type FinancialHealthLevel = 'CRITICAL' | 'ATTENTION' | 'HEALTHY' | 'COMFORTABLE';
+export type ProjectionEventDirection = 'INFLOW' | 'OUTFLOW';
+export type ProjectionSourceType =
+  | 'EXPECTED_INCOME'
+  | 'FIXED_EXPENSE'
+  | 'CREDIT_CARD_INSTALLMENT'
+  | 'INSTALLMENT_EXPENSE'
+  | 'LOAN_INSTALLMENT';
+
+export interface ProjectionEvent {
+  date: string;
+  description: string;
+  amount: number;
+  direction: ProjectionEventDirection;
+  sourceType: ProjectionSourceType;
+  sourceId: string;
+  projectedBalanceAfterEvent: number;
+}
+
+export interface MonthlyFinancialProjection {
+  year: number;
+  month: number;
+  currentBalance: number;
+  expectedIncomeTotal: number;
+  expectedExpenseTotal: number;
+  projectedFinalBalance: number;
+  minimumProjectedBalance: number;
+  minimumProjectedBalanceDate: string;
+  healthLevel: FinancialHealthLevel;
+  insight: string;
+  events: ProjectionEvent[];
+}
+
+export const HEALTH_LEVEL_LABELS: Record<FinancialHealthLevel, string> = {
+  CRITICAL: 'Crítico',
+  ATTENTION: 'Atenção',
+  HEALTHY: 'Saudável',
+  COMFORTABLE: 'Confortável',
+};
+
 export interface MonthlyDashboard {
   competence: DashboardCompetence;
   accounts: DashboardAccounts;
   summary: DashboardSummary;
   overdue: DashboardOverdue;
+  projection: MonthlyFinancialProjection;
   upcomingExpenses: DashboardExpense[];
   categories: DashboardCategory[];
   largestExpenses: DashboardExpense[];

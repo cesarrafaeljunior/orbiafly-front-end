@@ -4,6 +4,9 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   AccountTransactionResult,
+  AccountTransferOverview,
+  AccountTransferPayload,
+  AccountTransferResult,
   FinancialAccount,
   FinancialAccountPayload,
   FinancialAccountsOverview,
@@ -14,6 +17,7 @@ import {
 export class AccountsApi {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/accounts`;
+  private readonly transfersUrl = `${environment.apiUrl}/account-transfers`;
 
   getOverview(includeInactive = false): Observable<FinancialAccountsOverview> {
     return this.http.get<FinancialAccountsOverview>(this.baseUrl, {
@@ -51,6 +55,14 @@ export class AccountsApi {
 
   getTransactions(id: string): Observable<FinancialTransaction[]> {
     return this.http.get<FinancialTransaction[]>(`${this.baseUrl}/${id}/transactions`);
+  }
+
+  getTransfers(): Observable<AccountTransferOverview> {
+    return this.http.get<AccountTransferOverview>(this.transfersUrl);
+  }
+
+  transfer(payload: AccountTransferPayload): Observable<AccountTransferResult> {
+    return this.http.post<AccountTransferResult>(this.transfersUrl, payload);
   }
 
   adjustBalance(

@@ -14,12 +14,7 @@
       <label>
         <span>E-mail ou usuário</span>
         <i class="ph ph-user" aria-hidden="true"></i>
-        <input
-          type="text"
-          formControlName="login"
-          autocomplete="username"
-          placeholder="admin"
-        />
+        <input type="text" formControlName="login" autocomplete="username" placeholder="admin" />
       </label>
 
       <label>
@@ -36,6 +31,8 @@
       @if (error()) {
         <p class="auth-form__error">Credenciais inválidas.</p>
       }
+
+      <a class="auth-form__link" routerLink="/recuperar-senha">Esqueci minha senha</a>
 
       <button class="button button--primary" type="submit" [disabled]="authStore.loading()">
         <i class="ph ph-sign-in" aria-hidden="true"></i>

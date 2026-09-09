@@ -34,6 +34,10 @@ export class CreditCardPurchasesApi {
     return this.http.post<CreditCardPurchase>(this.baseUrl, payload);
   }
 
+  update(id: string, payload: CreditCardPurchasePayload): Observable<CreditCardPurchase> {
+    return this.http.put<CreditCardPurchase>(`${this.baseUrl}/${id}`, payload);
+  }
+
   updateInstallmentAmount(installmentId: string, amount: number): Observable<CreditCardMonthlyPurchaseInstallment> {
     return this.http.patch<CreditCardMonthlyPurchaseInstallment>(
       `${this.baseUrl}/installments/${installmentId}/amount`,

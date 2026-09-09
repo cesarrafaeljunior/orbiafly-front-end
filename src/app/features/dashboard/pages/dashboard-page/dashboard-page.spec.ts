@@ -41,6 +41,7 @@ describe('DashboardPage', () => {
 
   it('renders a useful empty state with a management action', async () => {
     const fixture = await setup({
+      ...dashboardFixture,
       competence: { year: 2026, month: 9 },
       accounts: { availableBalance: 0, activeCount: 0, items: [] },
       summary: {
@@ -53,6 +54,18 @@ describe('DashboardPage', () => {
         paidPercentage: null,
       },
       overdue: { count: 0, amount: 0 },
+      projection: {
+        ...dashboardFixture.projection,
+        year: 2026,
+        month: 9,
+        currentBalance: 0,
+        expectedIncomeTotal: 0,
+        expectedExpenseTotal: 0,
+        projectedFinalBalance: 0,
+        minimumProjectedBalance: 0,
+        minimumProjectedBalanceDate: '2026-09-01',
+        events: [],
+      },
       upcomingExpenses: [],
       categories: [],
       largestExpenses: [],

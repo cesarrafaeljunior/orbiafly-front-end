@@ -5,7 +5,7 @@
 .workspace {
   width: min(100% - 48px, var(--page-max-width));
   margin-inline: auto;
-  padding: var(--space-8) 0 var(--space-12);
+  padding: var(--space-8) 0 calc(var(--space-12) + 76px);
 }
 
 h1,
@@ -271,7 +271,6 @@ h1 {
 }
 
 .expense-card,
-.new-expense-card,
 .loading-state div {
   min-width: 0;
   border: 1px solid var(--border);
@@ -300,7 +299,7 @@ h1 {
 }
 
 .expense-icon,
-.new-expense-card__icon {
+.floating-new-expense i {
   display: grid;
   place-items: center;
   width: 42px;
@@ -369,8 +368,7 @@ h1 {
   border-left-color: var(--success);
 }
 
-.due-info--success strong,
-.expense-status--paid {
+.due-info--success strong {
   color: var(--success);
 }
 
@@ -386,22 +384,33 @@ h1 {
   border-left-color: var(--error);
 }
 
-.due-info--error strong,
-.expense-status--overdue {
+.due-info--error strong {
   color: var(--error);
 }
 
 .expense-status {
+  --status-color: var(--warning);
+
   justify-content: center;
   gap: var(--space-2);
   min-height: 34px;
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--status-color) 58%, var(--border));
   border-radius: var(--radius-pill);
-  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--status-color) 16%, var(--surface));
+  color: color-mix(in srgb, var(--status-color) 88%, white);
   padding: 0 var(--space-3);
   font-size: 0.8125rem;
   font-weight: 800;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--status-color) 10%, transparent);
   white-space: nowrap;
+}
+
+.expense-status--paid {
+  --status-color: var(--success);
+}
+
+.expense-status--overdue {
+  --status-color: var(--error);
 }
 
 .expense-actions {
@@ -413,77 +422,62 @@ h1 {
 }
 
 .action-button--primary {
-  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
-  background: color-mix(in srgb, var(--success) 7%, transparent);
+  border-color: color-mix(in srgb, var(--success) 24%, var(--border));
+  background: color-mix(in srgb, var(--success) 5%, transparent);
   color: var(--success);
 }
 
-.new-expense-card {
-  display: grid;
-  place-items: center;
-  align-content: center;
+.action-button--warning {
+  border-color: color-mix(in srgb, var(--warning) 38%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
+  color: var(--warning);
+}
+
+.floating-new-expense {
+  position: fixed;
+  right: max(var(--space-6), env(safe-area-inset-right));
+  bottom: max(var(--space-6), env(safe-area-inset-bottom));
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
   gap: var(--space-2);
-  min-height: 150px;
-  padding: var(--space-5);
-  border-style: dashed;
-  border-color: color-mix(in srgb, var(--text-muted) 22%, var(--border));
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  color: var(--text-muted);
-  text-align: center;
+  min-height: 52px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid color-mix(in srgb, var(--primary-light-blue) 42%, var(--border));
+  border-radius: var(--radius-pill);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2);
+  font: inherit;
+  font-weight: 800;
+  box-shadow: var(--shadow-md);
   cursor: pointer;
-  opacity: 0.62;
   transition:
-    opacity 160ms ease,
     border-color 160ms ease,
     background 160ms ease,
     color 160ms ease,
+    transform 160ms ease,
     box-shadow 160ms ease;
 }
 
-.new-expense-card:hover:not(:disabled) {
-  opacity: 1;
+.floating-new-expense:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--primary-light-blue) 65%, var(--border));
-  background: color-mix(in srgb, var(--primary-light-blue) 7%, var(--surface));
-  color: var(--text-primary);
-  box-shadow: 0 8px 22px color-mix(in srgb, var(--primary-light-blue) 8%, transparent);
+  background: color-mix(in srgb, var(--primary-light-blue) 9%, var(--surface-elevated));
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px color-mix(in srgb, black 24%, transparent);
 }
 
-.new-expense-card__icon {
-  border: 1px solid color-mix(in srgb, var(--text-muted) 30%, var(--border));
-  background: transparent;
-  color: var(--text-muted);
-  transition:
-    border-color 160ms ease,
-    background 160ms ease,
-    color 160ms ease;
-}
-
-.new-expense-card:hover:not(:disabled) .new-expense-card__icon {
-  border-color: color-mix(in srgb, var(--primary-light-blue) 65%, var(--border));
-  background: color-mix(in srgb, var(--primary-light-blue) 8%, transparent);
+.floating-new-expense i {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  background: color-mix(in srgb, var(--primary-light-blue) 14%, var(--surface));
   color: var(--primary-light-blue);
 }
 
-.new-expense-card strong {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  transition: color 160ms ease;
-}
-
-.new-expense-card small {
-  max-width: 220px;
-  color: color-mix(in srgb, var(--text-muted) 82%, transparent);
-  font-size: 0.75rem;
-  line-height: 1.45;
-  transition: color 160ms ease;
-}
-
-.new-expense-card:hover:not(:disabled) strong {
-  color: var(--primary-light-blue);
-}
-
-.new-expense-card:hover:not(:disabled) small {
-  color: var(--text-secondary);
+.floating-new-expense:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .loading-state div {
@@ -830,15 +824,15 @@ h1 {
   .secondary-actions .action-button {
     flex: 1;
   }
-  .new-expense-card {
-    display: flex;
-    flex-wrap: wrap;
-    min-height: 44px;
-    padding: var(--space-3);
+  .floating-new-expense {
+    right: var(--space-4);
+    bottom: var(--space-4);
+    min-height: 48px;
+    padding-right: var(--space-3);
   }
-  .new-expense-card__icon {
-    width: 28px;
-    height: 28px;
-    flex-basis: 28px;
+  .floating-new-expense i {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
   }
 }

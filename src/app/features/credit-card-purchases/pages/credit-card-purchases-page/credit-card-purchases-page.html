@@ -1,8 +1,8 @@
 <main class="purchase-workspace">
   <header class="page-heading">
     <div>
-      <h1>Compras parceladas</h1>
-      <p class="page-description">Gerencie as parcelas do cartão por competência e acompanhe quando cada compra termina.</p>
+      <h1>Compras do cartão</h1>
+      <p class="page-description">Gerencie as parcelas por competência e acompanhe compras à vista ou parceladas.</p>
     </div>
     <button class="button button--primary" type="button" (click)="openCreate()">
       <i class="ph ph-plus" aria-hidden="true"></i>
@@ -146,48 +146,37 @@
       @for (item of visibleItems(); track item.installmentId) {
         <article class="purchase-card" [class.purchase-card--completed]="item.status === 'PAID'">
           <header class="purchase-card__header">
-            <div class="purchase-identity">
-              <div class="purchase-avatar" aria-hidden="true">
-                <i class="ph ph-credit-card"></i>
-              </div>
-              <div>
-                <h2>{{ item.description }}</h2>
-                <p>
-                  {{ item.creditCardName }}
-                  <span>{{ brandLabels[item.creditCardBrand] }}</span>
-                  @if (item.creditCardLastFourDigits) {
-                    <span>•••• {{ item.creditCardLastFourDigits }}</span>
-                  }
-                </p>
-              </div>
-            </div>
-
-            <span class="purchase-status" [class.purchase-status--completed]="item.status === 'PAID'">
-              <i class="ph" [class.ph-clock]="item.status === 'PENDING'" [class.ph-check-circle]="item.status === 'PAID'" aria-hidden="true"></i>
-              {{ paymentLabel(item) }}
-            </span>
+            <h2>{{ item.description }}</h2>
+            <p class="purchase-card__card">
+              <i class="ph ph-credit-card" aria-hidden="true"></i>
+              {{ item.creditCardName }}
+              <span>{{ brandLabels[item.creditCardBrand] }}</span>
+              @if (item.creditCardLastFourDigits) {
+                <span>**** {{ item.creditCardLastFourDigits }}</span>
+              }
+            </p>
           </header>
 
-          <section class="purchase-amount">
-            <div>
+          <section class="purchase-card__body">
+            <div class="purchase-main-amount">
               <span>Parcela do mês</span>
               <strong>{{ item.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
             </div>
-            <div>
+            <div class="purchase-installment-info">
               <span>Parcelamento</span>
               <strong>{{ item.installmentNumber }} de {{ item.installmentCount }}</strong>
+              <small>{{ endingLabel(item) }}</small>
             </div>
           </section>
 
           <section class="purchase-progress">
             <div class="purchase-progress__header">
-              <span>{{ item.paidInstallmentCount }} pagas • {{ item.pendingInstallmentCount }} faltantes</span>
-              <strong>{{ item.installmentNumber }}/{{ item.installmentCount }}</strong>
+              <span>{{ item.paidInstallmentCount }} pagas</span>
+              <strong>{{ item.pendingInstallmentCount }} faltam</strong>
             </div>
             <div class="progress-track" aria-label="Progresso do parcelamento">
-              <span [style.width.%]="(item.paidInstallmentCount / item.installmentCount) * 100"></span>
+              <span [style.width.%]="paymentProgressPercentage(item)"></span>
             </div>
-            <small>{{ endingLabel(item) }}</small>
           </section>
 
           <footer class="purchase-card__actions">
@@ -195,23 +184,35 @@
               <i class="ph ph-calendar-blank" aria-hidden="true"></i>
               Vence {{ dueBadge(item) }}
             </span>
-            <div class="action-group">
+            <div class="action-group" aria-label="Ações da compra">
               <button
-                class="action-button action-button--primary"
+                class="icon-action icon-action--primary"
                 type="button"
-                [disabled]="store.busyIds().has(item.installmentId)"
+                title="Marcar parcelas pagas"
+                aria-label="Marcar parcelas pagas"
+                [disabled]="store.busyIds().has(item.installmentId) || loadingPaymentPurchase()"
                 (click)="changePayment(item)"
               >
-                <i class="ph" [class.ph-check-circle]="item.status === 'PENDING'" [class.ph-arrow-counter-clockwise]="item.status === 'PAID'" aria-hidden="true"></i>
-                {{ item.status === 'PAID' ? 'Voltar para pendente' : 'Marcar como paga' }}
+                <i class="ph ph-check-circle" aria-hidden="true"></i>
               </button>
-              <button class="action-button" type="button" [disabled]="item.status === 'PAID'" (click)="openMonthlyEdit(item)">
+              <button
+                class="icon-action"
+                type="button"
+                title="Editar compra"
+                aria-label="Editar compra"
+                [disabled]="loadingPaymentPurchase()"
+                (click)="openEdit(item)"
+              >
                 <i class="ph ph-pencil-simple" aria-hidden="true"></i>
-                Editar valor
               </button>
-              <button class="action-button action-button--danger" type="button" (click)="deletingPurchase.set(item)">
+              <button
+                class="icon-action icon-action--danger"
+                type="button"
+                title="Excluir compra"
+                aria-label="Excluir compra"
+                (click)="deletingPurchase.set(item)"
+              >
                 <i class="ph ph-trash" aria-hidden="true"></i>
-                Excluir compra
               </button>
             </div>
           </footer>
@@ -233,8 +234,8 @@
     <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="purchase-form-title" (mousedown)="$event.stopPropagation()">
       <header>
         <div>
-          <p class="eyebrow">Novo compromisso no cartão</p>
-          <h2 id="purchase-form-title">Nova compra parcelada</h2>
+          <p class="eyebrow">{{ editingPurchase() ? 'Editar compromisso' : 'Novo compromisso no cartão' }}</p>
+          <h2 id="purchase-form-title">{{ editingPurchase() ? 'Editar compra' : 'Nova compra' }}</h2>
         </div>
         <button class="icon-button" type="button" aria-label="Fechar" (click)="closePurchaseForm()">×</button>
       </header>
@@ -264,24 +265,63 @@
           </label>
 
           <label>
-            <span>Parcelas</span>
-            <input type="number" formControlName="installmentCount" min="1" max="360" />
+            <span>Data da compra</span>
+            <input type="date" formControlName="purchaseDate" />
           </label>
         </div>
 
-        <label>
-          <span>Data da compra</span>
-          <input type="date" formControlName="purchaseDate" />
-        </label>
+        <section class="type-selector" aria-label="Tipo da compra">
+          <button
+            type="button"
+            [class.type-selector__option--active]="selectedPurchaseType() === 'SINGLE'"
+            [attr.aria-pressed]="selectedPurchaseType() === 'SINGLE'"
+            (click)="changePurchaseType('SINGLE')"
+          >
+            À vista
+          </button>
+          <button
+            type="button"
+            [class.type-selector__option--active]="selectedPurchaseType() === 'INSTALLMENT'"
+            [attr.aria-pressed]="selectedPurchaseType() === 'INSTALLMENT'"
+            (click)="changePurchaseType('INSTALLMENT')"
+          >
+            Parcelada
+          </button>
+        </section>
+
+        @if (isInstallmentPurchase()) {
+          <label>
+            <span>Parcelas</span>
+            <input type="number" formControlName="installmentCount" min="1" max="360" />
+          </label>
+        } @else {
+          <label>
+            <span>Conta de pagamento</span>
+            <select formControlName="financialAccountId" [disabled]="store.loadingAccounts() || store.activeAccounts().length === 0">
+              @for (account of store.activeAccounts(); track account.id) {
+                <option [value]="account.id">{{ accountOptionLabel(account.id) }}</option>
+              }
+            </select>
+            @if (!store.loadingAccounts() && store.activeAccounts().length === 0) {
+              <small>Nenhuma conta ativa disponível.</small>
+            }
+          </label>
+        }
 
         <section class="purchase-preview" aria-label="Prévia da compra">
           <div>
-            <span>Total</span>
-            <strong>{{ purchaseForm.controls.totalAmount.value | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+            <span>Cartão</span>
+            <strong>{{ cardOptionLabel(purchaseForm.controls.creditCardId.value) || '-' }}</strong>
           </div>
           <div>
-            <span>Parcela base</span>
-            <strong>{{ purchaseForm.controls.installmentCount.value }}x de {{ installmentPreviewAmount() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+            <span>{{ isInstallmentPurchase() ? 'Parcela base' : 'Valor da compra' }}</span>
+            <strong>
+              @if (isInstallmentPurchase()) {
+                {{ purchaseForm.controls.installmentCount.value }}x de {{ installmentPreviewAmount() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+              } @else {
+                {{ purchaseForm.controls.totalAmount.value | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+              }
+            </strong>
           </div>
           <div>
             <span>Limite atual</span>
@@ -291,13 +331,23 @@
             <span>Após a compra</span>
             <strong>{{ availableAfterPurchase() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
           </div>
+          <div>
+            <span>Fatura estimada</span>
+            <strong>{{ estimatedInvoiceLabel() }}</strong>
+          </div>
+          @if (!isInstallmentPurchase()) {
+            <div>
+              <span>Conta debitada</span>
+              <strong>{{ accountOptionLabel(purchaseForm.controls.financialAccountId.value) || '-' }}</strong>
+            </div>
+          }
         </section>
 
         <footer>
           <button class="button button--secondary" type="button" (click)="closePurchaseForm()">Cancelar</button>
           <button class="button button--primary" type="submit" [disabled]="store.submitting() || purchaseForm.invalid">
             <i class="ph ph-check"></i>
-            Confirmar compra
+            {{ editingPurchase() ? 'Salvar compra' : 'Confirmar compra' }}
           </button>
         </footer>
       </form>
@@ -305,33 +355,39 @@
   </div>
 }
 
-@if (monthlyInstallment(); as item) {
-  <div class="modal-backdrop" (mousedown)="closeMonthlyEdit()">
-    <section class="amount-modal" role="dialog" aria-modal="true" aria-labelledby="monthly-value-title" (mousedown)="$event.stopPropagation()">
+@if (paymentPurchase(); as purchase) {
+  <div class="modal-backdrop" (mousedown)="closePayment()">
+    <section class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="payment-title" (mousedown)="$event.stopPropagation()">
       <header>
         <div>
-          <p class="eyebrow">Somente {{ store.periodLabel() }}</p>
-          <h2 id="monthly-value-title">Editar valor da parcela</h2>
+          <p class="eyebrow">Parcelas pagas</p>
+          <h2 id="payment-title">{{ purchase.description }}</h2>
         </div>
-        <button class="icon-button" type="button" aria-label="Fechar" (click)="closeMonthlyEdit()">×</button>
+        <button class="icon-button" type="button" aria-label="Fechar" title="Fechar" (click)="closePayment()">×</button>
       </header>
-      <form (submit)="$event.preventDefault(); saveMonthlyAmount()">
-        <div class="monthly-context">
-          <strong>{{ item.description }}</strong>
-          <span>Parcela {{ item.installmentNumber }} de {{ item.installmentCount }}</span>
-        </div>
-        <label class="amount-field">
-          <span>Valor desta competência</span>
-          <input appCurrencyMask [formControl]="monthlyAmount" type="text" inputmode="decimal" />
-          @if (monthlyAmount.touched && monthlyAmount.invalid) {
-            <small>Informe um valor maior que zero.</small>
-          }
-        </label>
-        <footer>
-          <button class="button button--secondary" type="button" (click)="closeMonthlyEdit()">Cancelar</button>
-          <button class="button button--primary" type="submit" [disabled]="store.submitting()">Salvar mês</button>
-        </footer>
-      </form>
+
+      <div class="payment-installments" aria-label="Selecionar parcelas pagas">
+        @for (installment of purchase.installments; track installment.id) {
+          <button
+            class="installment-toggle"
+            type="button"
+            [class.installment-toggle--paid]="selectedPaidInstallments().has(installment.id)"
+            [attr.aria-pressed]="selectedPaidInstallments().has(installment.id)"
+            (click)="toggleInstallmentSelection(installment.id)"
+          >
+            <span>{{ installmentLabel(installment) }}</span>
+            <strong>{{ installment.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+            <small>{{ installmentCompetenceLabel(installment) }}</small>
+          </button>
+        }
+      </div>
+
+      <footer>
+        <button class="button button--secondary" type="button" (click)="closePayment()">Cancelar</button>
+        <button class="button button--primary" type="button" [disabled]="store.submitting()" (click)="savePaymentSelection()">
+          Salvar pagamentos
+        </button>
+      </footer>
     </section>
   </div>
 }
@@ -339,7 +395,7 @@
 @if (deletingPurchase(); as item) {
   <div class="modal-backdrop" (mousedown)="deletingPurchase.set(null)">
     <section class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-purchase-title" (mousedown)="$event.stopPropagation()">
-      <h2 id="delete-purchase-title">Excluir compra parcelada?</h2>
+      <h2 id="delete-purchase-title">Excluir compra?</h2>
       <p>Todas as parcelas desta compra serão removidas da listagem e deixarão de comprometer o cartão.</p>
       <footer>
         <button class="button button--secondary" type="button" (click)="deletingPurchase.set(null)">Cancelar</button>

@@ -1,7 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../../environments/environment';
-import { AuthResponse, LoginPayload, RegisterPayload } from '../models/auth.models';
+import {
+  AuthResponse,
+  ChangePasswordPayload,
+  ConfirmPasswordResetPayload,
+  LoginPayload,
+  RegisterPayload,
+  RequestPasswordResetPayload,
+} from '../models/auth.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApi {
@@ -14,5 +21,17 @@ export class AuthApi {
 
   register(payload: RegisterPayload) {
     return this.http.post<AuthResponse>(`${this.baseUrl}/register`, payload);
+  }
+
+  changePassword(payload: ChangePasswordPayload) {
+    return this.http.post<void>(`${this.baseUrl}/change-password`, payload);
+  }
+
+  requestPasswordReset(payload: RequestPasswordResetPayload) {
+    return this.http.post<void>(`${this.baseUrl}/password-reset/request`, payload);
+  }
+
+  confirmPasswordReset(payload: ConfirmPasswordResetPayload) {
+    return this.http.post<void>(`${this.baseUrl}/password-reset/confirm`, payload);
   }
 }

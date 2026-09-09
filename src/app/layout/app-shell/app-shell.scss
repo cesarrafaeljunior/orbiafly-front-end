@@ -7,6 +7,10 @@
   overflow: hidden;
 }
 
+:host-context(.orbiafly-drawer-open) {
+  overflow: hidden;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
@@ -103,13 +107,19 @@
     z-index: 70;
     display: block;
     overflow: hidden;
+    overscroll-behavior: contain;
     background: color-mix(in srgb, var(--background) 78%, transparent);
     backdrop-filter: blur(2px);
+    touch-action: none;
   }
 
   .drawer-panel {
-    height: 100%;
+    width: min(84vw, 304px);
+    height: 100dvh;
+    max-width: 100%;
+    overflow: hidden;
     animation: drawer-enter 180ms ease-out;
+    touch-action: pan-y;
   }
 }
 

@@ -3,6 +3,7 @@ import localePt from '@angular/common/locales/pt';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
+import { AccountsApi } from '../../../accounts/services/accounts-api';
 import { CreditCardsApi } from '../../../credit-cards/services/credit-cards-api';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { CreditCardPurchasesApi } from '../../services/credit-card-purchases-api';
@@ -11,33 +12,49 @@ import { CreditCardPurchasesPage } from './credit-card-purchases-page';
 registerLocaleData(localePt);
 
 const purchase = {
-  id: 'purchase-1',
+  installmentId: 'installment-1',
+  purchaseId: 'purchase-1',
   description: 'Notebook',
+  amount: 300,
   totalAmount: 3000,
   purchaseDate: '2026-08-01',
+  installmentNumber: 1,
   installmentCount: 10,
-  installmentAmount: 300,
   creditCardId: 'card-1',
   creditCardName: 'Nubank',
   creditCardBrand: 'MASTERCARD',
   creditCardLastFourDigits: '1234',
-  status: 'EM_ANDAMENTO',
-  completedInstallmentCount: 0,
-  futureInstallmentCount: 10,
-  nextInstallment: {
-    id: 'installment-1',
-    installmentNumber: 1,
-    amount: 300,
-    competenceYear: 2026,
-    competenceMonth: 8,
-    dueDate: '2026-08-10',
-    status: 'PENDING',
-    createdAt: '2026-08-01T00:00:00Z',
-  },
-  installments: [],
-  deletedAt: null,
+  competenceYear: 2026,
+  competenceMonth: 9,
+  dueDate: '2026-09-10',
+  status: 'PENDING',
+  paidAt: null,
+  paidInstallmentCount: 0,
+  pendingInstallmentCount: 10,
+  remainingInstallmentCount: 9,
+  endingYear: 2027,
+  endingMonth: 6,
+  monthsUntilEnd: 9,
   createdAt: '2026-08-01T00:00:00Z',
   updatedAt: '2026-08-01T00:00:00Z',
+};
+
+const accountOverview = {
+  totalAvailableBalance: 1000,
+  activeCount: 1,
+  accounts: [
+    {
+      id: 'account-1',
+      name: 'Conta principal',
+      type: 'CHECKING',
+      institution: 'Banco',
+      openingBalance: 1000,
+      currentBalance: 1000,
+      active: true,
+      createdAt: '2026-08-01T00:00:00Z',
+      updatedAt: '2026-08-01T00:00:00Z',
+    },
+  ],
 };
 
 const cardOverview = {
@@ -67,20 +84,34 @@ const cardOverview = {
 describe('CreditCardPurchasesPage', () => {
   async function setup(purchases: unknown[]): Promise<ComponentFixture<CreditCardPurchasesPage>> {
     const api = {
-      getOverview: vi.fn().mockReturnValue(
+      getMonthly: vi.fn().mockReturnValue(
         of({
-          totalCommitted: purchases.length ? 3000 : 0,
-          activePurchaseCount: purchases.length,
-          futureInstallmentCount: purchases.length ? 10 : 0,
-          currentMonthInstallmentsAmount: purchases.length ? 300 : 0,
-          purchases,
+          year: 2026,
+          month: 9,
+          summary: {
+            total: purchases.length ? 300 : 0,
+            paidTotal: 0,
+            pendingTotal: purchases.length ? 300 : 0,
+            totalCount: purchases.length,
+            paidCount: 0,
+            pendingCount: purchases.length,
+            paidPercentage: 0,
+          },
+          items: purchases,
         }),
       ),
+      get: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
+      updateInstallmentAmount: vi.fn(),
+      updateInstallmentStatus: vi.fn(),
       delete: vi.fn(),
     };
     const cardsApi = {
       getOverview: vi.fn().mockReturnValue(of(cardOverview)),
+    };
+    const accountsApi = {
+      getOverview: vi.fn().mockReturnValue(of(accountOverview)),
     };
     const toastService = {
       success: vi.fn(),
@@ -94,6 +125,7 @@ describe('CreditCardPurchasesPage', () => {
       providers: [
         { provide: CreditCardPurchasesApi, useValue: api },
         { provide: CreditCardsApi, useValue: cardsApi },
+        { provide: AccountsApi, useValue: accountsApi },
         { provide: ToastService, useValue: toastService },
       ],
     }).compileComponents();
@@ -109,7 +141,7 @@ describe('CreditCardPurchasesPage', () => {
     const fixture = await setup([]);
     const element = fixture.nativeElement as HTMLElement;
 
-    expect(element.textContent).toContain('Nenhuma compra parcelada cadastrada');
+    expect(element.textContent).toContain('Nenhuma parcela nesta competência');
     expect(element.textContent).not.toContain('Ordenar por');
   });
 
@@ -117,16 +149,17 @@ describe('CreditCardPurchasesPage', () => {
     const fixture = await setup([purchase]);
     const element = fixture.nativeElement as HTMLElement;
 
-    expect(element.textContent).toContain('Total comprometido');
+    expect(element.textContent).toContain('Total do mês');
     expect(element.textContent).toContain('Notebook');
     expect(element.textContent).toContain('Nova compra');
+    expect(element.textContent).toContain('Setembro de 2026');
 
     const input = element.querySelector('input[type="search"]') as HTMLInputElement;
     input.value = 'mercado';
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
-    expect(element.textContent).toContain('Nenhuma compra encontrada');
-    expect(element.textContent).not.toContain('Nenhuma compra parcelada cadastrada');
+    expect(element.textContent).toContain('Nenhuma parcela encontrada');
+    expect(element.textContent).not.toContain('Nenhuma parcela nesta competência');
   });
 });

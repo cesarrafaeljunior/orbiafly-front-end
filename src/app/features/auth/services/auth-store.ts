@@ -3,7 +3,15 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ToastService } from '../../../shared/services/toast.service';
-import { AuthResponse, AuthUser, LoginPayload, RegisterPayload } from '../models/auth.models';
+import {
+  AuthResponse,
+  AuthUser,
+  ChangePasswordPayload,
+  ConfirmPasswordResetPayload,
+  LoginPayload,
+  RegisterPayload,
+  RequestPasswordResetPayload,
+} from '../models/auth.models';
 import { AuthApi } from './auth-api';
 
 const TOKEN_STORAGE_KEY = 'orbiafly.auth.token';
@@ -48,6 +56,30 @@ export class AuthStore {
     );
   }
 
+  async changePassword(payload: ChangePasswordPayload): Promise<void> {
+    await this.performAccountAction(
+      () => firstValueFrom(this.api.changePassword(payload)),
+      'Senha alterada com sucesso.',
+      'Não foi possível alterar a senha.',
+    );
+  }
+
+  async requestPasswordReset(payload: RequestPasswordResetPayload): Promise<void> {
+    await this.performAccountAction(
+      () => firstValueFrom(this.api.requestPasswordReset(payload)),
+      'Se a conta existir, o código foi gerado.',
+      'Não foi possível solicitar a recuperação.',
+    );
+  }
+
+  async confirmPasswordReset(payload: ConfirmPasswordResetPayload): Promise<void> {
+    await this.performAccountAction(
+      () => firstValueFrom(this.api.confirmPasswordReset(payload)),
+      'Senha redefinida com sucesso.',
+      'Não foi possível redefinir a senha.',
+    );
+  }
+
   logout(redirect = true): void {
     this.clearSession();
     this.toastService.info('Sessão encerrada.');
@@ -89,6 +121,23 @@ export class AuthStore {
     }
   }
 
+  private async performAccountAction(
+    request: () => Promise<void>,
+    successMessage: string,
+    fallbackErrorMessage: string,
+  ): Promise<void> {
+    this.state.update((current) => ({ ...current, loading: true }));
+    try {
+      await request();
+      this.state.update((current) => ({ ...current, loading: false }));
+      this.toastService.success(successMessage);
+    } catch (error) {
+      this.state.update((current) => ({ ...current, loading: false }));
+      this.toastService.error(this.errorMessage(error, fallbackErrorMessage));
+      throw error;
+    }
+  }
+
   private persistSession(response: AuthResponse | null): void {
     try {
       if (!response) {
@@ -120,13 +169,13 @@ export class AuthStore {
     }
   }
 
-  private errorMessage(error: unknown): string {
+  private errorMessage(error: unknown, fallback = 'Não foi possível autenticar.'): string {
     if (error instanceof HttpErrorResponse) {
       const detail = error.error?.detail;
       if (typeof detail === 'string' && detail.trim()) {
         return detail;
       }
     }
-    return 'Não foi possível autenticar.';
+    return fallback;
   }
 }

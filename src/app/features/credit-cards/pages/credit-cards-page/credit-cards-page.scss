@@ -231,9 +231,9 @@ h1 {
 .cards-grid,
 .cards-loading {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
   align-items: start;
-  gap: var(--space-4);
+  gap: var(--space-6);
   margin-top: var(--space-6);
 }
 
@@ -248,7 +248,7 @@ h1 {
 .credit-card {
   display: grid;
   grid-template-rows: auto auto 1fr auto;
-  min-height: 300px;
+  min-height: 328px;
   overflow: hidden;
   border-color: color-mix(in srgb, var(--primary-dark-green) 35%, var(--border));
   background:
@@ -285,7 +285,7 @@ h1 {
   justify-content: space-between;
   min-width: 0;
   gap: var(--space-4);
-  padding: var(--space-4);
+  padding: var(--space-6);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
 }
 
@@ -361,8 +361,8 @@ h1 {
   display: grid;
   align-content: center;
   gap: var(--space-2);
-  min-height: 138px;
-  padding: var(--space-6) var(--space-5);
+  min-height: 150px;
+  padding: var(--space-6);
 }
 
 .card-limit strong {
@@ -376,7 +376,7 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
-  padding: 0 var(--space-4) var(--space-4);
+  padding: 0 var(--space-6) var(--space-6);
 }
 
 .card-dates div {
@@ -398,7 +398,7 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  padding: var(--space-4);
+  padding: var(--space-6);
   border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
 }
 
@@ -421,7 +421,7 @@ h1 {
   border-color: color-mix(in srgb, var(--text-muted) 22%, var(--border));
   background: color-mix(in srgb, var(--surface) 94%, transparent);
   color: var(--text-muted);
-  padding: var(--space-5);
+  padding: var(--space-6);
   font: inherit;
   text-align: center;
   cursor: pointer;
@@ -590,7 +590,7 @@ h1 {
 
   .card-limit {
     min-height: 120px;
-    padding: var(--space-5) var(--space-4);
+    padding: var(--space-6) var(--space-4);
   }
 
   .credit-card__actions {

@@ -3,6 +3,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   ACCOUNT_TYPE_LABELS,
+  AccountTransferPayload,
   FinancialAccount,
   FinancialAccountPayload,
   FinancialAccountType,
@@ -32,6 +33,30 @@ export class AccountsPage implements OnInit {
   protected readonly adjustingAccount = signal<FinancialAccount | null>(null);
   protected readonly deactivatingAccount = signal<FinancialAccount | null>(null);
   protected readonly deletingAccount = signal<FinancialAccount | null>(null);
+  protected readonly showTransferForm = signal(false);
+
+  protected readonly activeAccounts = computed(() =>
+    this.store.overview().accounts.filter((account) => account.active),
+  );
+
+  protected readonly transferDestinationAccounts = computed(() => {
+    const sourceId = this.transferForm.controls.sourceAccountId.value;
+    return this.activeAccounts().filter((account) => account.id !== sourceId);
+  });
+
+  protected readonly transferSourceAccount = computed(
+    () =>
+      this.activeAccounts().find(
+        (account) => account.id === this.transferForm.controls.sourceAccountId.value,
+      ) ?? null,
+  );
+
+  protected readonly transferDestinationAccount = computed(
+    () =>
+      this.activeAccounts().find(
+        (account) => account.id === this.transferForm.controls.destinationAccountId.value,
+      ) ?? null,
+  );
 
   protected readonly filteredAccounts = computed(() => {
     const query = this.searchTerm().trim().toLocaleLowerCase('pt-BR');
@@ -81,7 +106,10 @@ export class AccountsPage implements OnInit {
     return accounts;
   });
   protected readonly hasOnlyInactiveAccounts = computed(
-    () => this.store.includeInactive() && this.store.overview().accounts.length > 0 && this.store.overview().activeCount === 0,
+    () =>
+      this.store.includeInactive() &&
+      this.store.overview().accounts.length > 0 &&
+      this.store.overview().activeCount === 0,
   );
 
   protected readonly accountForm = new FormGroup({
@@ -100,6 +128,29 @@ export class AccountsPage implements OnInit {
     openingBalance: new FormControl(0, {
       nonNullable: true,
       validators: [Validators.required],
+    }),
+  });
+
+  protected readonly transferForm = new FormGroup({
+    sourceAccountId: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    destinationAccountId: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    amount: new FormControl(0, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0.01)],
+    }),
+    transferDate: new FormControl(this.today(), {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    description: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(180)],
     }),
   });
 
@@ -166,6 +217,61 @@ export class AccountsPage implements OnInit {
       : await this.store.create({ ...payload, openingBalance: value.openingBalance });
     if (success) {
       this.closeAccountForm();
+    }
+  }
+
+  protected openTransfer(source?: FinancialAccount): void {
+    const accounts = this.activeAccounts();
+    const sourceAccount = source ?? accounts[0] ?? null;
+    const destinationAccount = accounts.find((account) => account.id !== sourceAccount?.id) ?? null;
+    this.transferForm.reset({
+      sourceAccountId: sourceAccount?.id ?? '',
+      destinationAccountId: destinationAccount?.id ?? '',
+      amount: 0,
+      transferDate: this.today(),
+      description: '',
+    });
+    this.showTransferForm.set(true);
+  }
+
+  protected closeTransferForm(): void {
+    this.showTransferForm.set(false);
+  }
+
+  protected onTransferSourceChange(): void {
+    const destination = this.transferDestinationAccount();
+    if (!destination) {
+      this.transferForm.controls.destinationAccountId.setValue(
+        this.transferDestinationAccounts()[0]?.id ?? '',
+      );
+    }
+  }
+
+  protected transferSourceBalanceAfter(): number {
+    const account = this.transferSourceAccount();
+    return account ? account.currentBalance - this.transferForm.controls.amount.value : 0;
+  }
+
+  protected transferDestinationBalanceAfter(): number {
+    const account = this.transferDestinationAccount();
+    return account ? account.currentBalance + this.transferForm.controls.amount.value : 0;
+  }
+
+  protected async saveTransfer(): Promise<void> {
+    const value = this.transferForm.getRawValue();
+    if (this.transferForm.invalid || value.sourceAccountId === value.destinationAccountId) {
+      this.transferForm.markAllAsTouched();
+      return;
+    }
+    const payload: AccountTransferPayload = {
+      sourceAccountId: value.sourceAccountId,
+      destinationAccountId: value.destinationAccountId,
+      amount: value.amount,
+      transferDate: value.transferDate,
+      description: value.description.trim() || null,
+    };
+    if (await this.store.transfer(payload)) {
+      this.closeTransferForm();
     }
   }
 
@@ -245,7 +351,17 @@ export class AccountsPage implements OnInit {
     if (type === 'CREDIT') {
       return 'Crédito';
     }
+    if (type === 'TRANSFER_IN') {
+      return 'Transferência recebida';
+    }
+    if (type === 'TRANSFER_OUT') {
+      return 'Transferência enviada';
+    }
     return 'Ajuste';
+  }
+
+  private today(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 
   private async ensureInactiveAccountsAreVisible(): Promise<void> {

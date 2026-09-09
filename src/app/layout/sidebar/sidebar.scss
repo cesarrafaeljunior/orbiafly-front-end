@@ -1,12 +1,20 @@
 :host {
   display: block;
   height: 100%;
+  max-width: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 .sidebar {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   width: var(--sidebar-width);
+  max-width: 100%;
   height: 100%;
   border-right: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 92%, var(--background));
@@ -18,7 +26,7 @@
 }
 
 .sidebar--drawer {
-  width: min(84vw, 304px);
+  width: 100%;
   border-right-color: color-mix(in srgb, var(--primary-light-blue) 18%, var(--border));
   box-shadow: var(--shadow-md);
 }
@@ -203,12 +211,19 @@
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-elevated) 68%, transparent);
   color: var(--text-secondary);
+  max-width: 100%;
   padding: var(--space-2) var(--space-3);
   text-align: left;
+  text-decoration: none;
+}
+
+.sidebar__user-card:hover {
+  border-color: color-mix(in srgb, var(--primary-light-blue) 35%, var(--border));
+  background: color-mix(in srgb, var(--primary-light-blue) 5%, var(--surface));
 }
 
 .sidebar__user-card {
-  cursor: default;
+  cursor: pointer;
 }
 
 .sidebar__logout {
@@ -228,6 +243,7 @@
 }
 
 .sidebar__user-card > i {
+  flex: 0 0 auto;
   color: var(--primary-light-blue);
   font-size: 1.55rem;
 }
@@ -240,7 +256,9 @@
 .sidebar__user-card span {
   display: grid;
   min-width: 0;
+  max-width: 100%;
   gap: 2px;
+  overflow: hidden;
 }
 
 .sidebar__user-card strong,

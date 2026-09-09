@@ -38,6 +38,12 @@ html {
   background: var(--background);
 }
 
+html.orbiafly-drawer-open,
+body.orbiafly-drawer-open {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   min-height: 100%;
   margin: 0;

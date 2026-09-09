@@ -1,6 +1,7 @@
 export type FinancialAccountType = 'CHECKING' | 'SAVINGS' | 'DIGITAL_ACCOUNT' | 'CASH' | 'OTHER';
 
-export type FinancialTransactionType = 'CREDIT' | 'DEBIT' | 'ADJUSTMENT';
+export type FinancialTransactionType =
+  'CREDIT' | 'DEBIT' | 'ADJUSTMENT' | 'TRANSFER_IN' | 'TRANSFER_OUT';
 
 export interface FinancialAccount {
   id: string;
@@ -35,7 +36,14 @@ export interface FinancialTransaction {
   balanceEffect: number;
   description: string;
   occurredOn: string;
-  referenceType: 'FIXED_EXPENSE_OCCURRENCE' | 'LOAN_ENTRY' | null;
+  referenceType:
+    | 'FIXED_EXPENSE_OCCURRENCE'
+    | 'INSTALLMENT_EXPENSE_INSTALLMENT'
+    | 'LOAN_ENTRY'
+    | 'EXPECTED_INCOME'
+    | 'ACCOUNT_TRANSFER'
+    | 'CREDIT_CARD_PURCHASE'
+    | null;
   referenceId: string | null;
   reversalOfId: string | null;
   createdAt: string;
@@ -44,6 +52,41 @@ export interface FinancialTransaction {
 export interface AccountTransactionResult {
   financialAccount: FinancialAccount;
   transaction: FinancialTransaction;
+}
+
+export interface AccountTransfer {
+  id: string;
+  sourceAccountId: string;
+  sourceAccountName: string;
+  destinationAccountId: string;
+  destinationAccountName: string;
+  amount: number;
+  transferDate: string;
+  description: string;
+  sourceTransactionId: string;
+  destinationTransactionId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AccountTransferPayload {
+  sourceAccountId: string;
+  destinationAccountId: string;
+  amount: number;
+  transferDate: string;
+  description: string | null;
+}
+
+export interface AccountTransferOverview {
+  transferredTotal: number;
+  transferCount: number;
+  items: AccountTransfer[];
+}
+
+export interface AccountTransferResult {
+  transfer: AccountTransfer;
+  source: AccountTransactionResult;
+  destination: AccountTransactionResult;
 }
 
 export interface ApiProblem {

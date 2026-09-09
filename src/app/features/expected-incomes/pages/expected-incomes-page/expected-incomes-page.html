@@ -1,0 +1,301 @@
+<main class="income-workspace">
+  <header class="page-heading">
+    <div>
+      <h1>Recebimentos</h1>
+      <p class="page-description">Acompanhe valores previstos sem misturar com o saldo real.</p>
+    </div>
+    <button class="button button--primary" type="button" (click)="openCreate()">
+      <i class="ph ph-plus" aria-hidden="true"></i>
+      Nova entrada
+    </button>
+  </header>
+
+  <section class="income-summary" aria-label="Resumo de recebimentos">
+    <article class="summary-card summary-card--pending">
+      <span>A receber</span>
+      <strong>{{
+        store.overview().pendingTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+      }}</strong>
+      <small>{{ store.overview().pendingCount | number: '1.0-0' : 'pt-BR' }} previstos</small>
+    </article>
+    <article class="summary-card summary-card--received">
+      <span>Recebido</span>
+      <strong>{{
+        store.overview().receivedTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+      }}</strong>
+      <small>já efetivado em conta</small>
+    </article>
+    <article class="summary-card summary-card--real">
+      <span>Saldo real</span>
+      <strong>{{
+        store.accountsOverview().totalAvailableBalance
+          | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+      }}</strong>
+      <small>não inclui valores a receber</small>
+    </article>
+  </section>
+
+  <section class="income-toolbar">
+    <div class="income-search">
+      <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+      <input
+        type="search"
+        aria-label="Buscar recebimentos"
+        placeholder="Buscar por descrição, conta ou observação..."
+        [value]="searchTerm()"
+        (input)="updateSearch($event)"
+      />
+    </div>
+    <div class="status-filter" aria-label="Filtrar recebimentos por status">
+      <button
+        type="button"
+        [class.active]="statusFilter() === 'ALL'"
+        (click)="changeStatusFilter('ALL')"
+      >
+        Todos
+      </button>
+      <button
+        type="button"
+        [class.active]="statusFilter() === 'PENDING'"
+        (click)="changeStatusFilter('PENDING')"
+      >
+        A receber
+      </button>
+      <button
+        type="button"
+        [class.active]="statusFilter() === 'RECEIVED'"
+        (click)="changeStatusFilter('RECEIVED')"
+      >
+        Recebidos
+      </button>
+      <button
+        type="button"
+        [class.active]="statusFilter() === 'CANCELED'"
+        (click)="changeStatusFilter('CANCELED')"
+      >
+        Cancelados
+      </button>
+    </div>
+    <label class="sort-control">
+      <span>Ordenar por</span>
+      <select [value]="sortOption()" (change)="changeSort($event)">
+        <option value="DATE_ASC">Data próxima</option>
+        <option value="DATE_DESC">Data distante</option>
+        <option value="AMOUNT_DESC">Maior valor</option>
+        <option value="AMOUNT_ASC">Menor valor</option>
+        <option value="NAME_ASC">Nome A-Z</option>
+      </select>
+    </label>
+  </section>
+
+  @if (store.error()) {
+    <section class="feedback" role="alert">
+      <div>
+        <strong>Não foi possível concluir a operação</strong>
+        <p>{{ store.error() }}</p>
+      </div>
+      <button class="button button--secondary" type="button" (click)="store.loadIncomes()">
+        Tentar novamente
+      </button>
+    </section>
+  }
+
+  @if (store.loading()) {
+    <section class="income-loading" aria-label="Carregando recebimentos" aria-live="polite">
+      @for (item of [1, 2, 3]; track item) {
+        <div></div>
+      }
+    </section>
+  } @else if (store.overview().items.length === 0) {
+    <section class="empty-state">
+      <div class="empty-state__icon" aria-hidden="true"><i class="ph ph-tray-arrow-down"></i></div>
+      <h2>Nenhum recebimento cadastrado</h2>
+      <p>Cadastre valores previstos para alimentar a projeção mensal.</p>
+      <button class="button button--primary" type="button" (click)="openCreate()">
+        Adicionar recebimento
+      </button>
+    </section>
+  } @else if (filteredIncomes().length === 0) {
+    <section class="empty-state empty-state--search">
+      <h2>Nenhum recebimento encontrado</h2>
+      <p>Nenhum item corresponde à busca ou aos filtros selecionados.</p>
+    </section>
+  } @else {
+    <section class="income-list" aria-label="Recebimentos cadastrados">
+      @for (income of filteredIncomes(); track income.id) {
+        <article
+          class="income-card"
+          [class.income-card--received]="income.status === 'RECEIVED'"
+          [class.income-card--canceled]="income.status === 'CANCELED'"
+        >
+          <header class="income-card__header">
+            <div>
+              <h2>{{ income.description }}</h2>
+              <p>Previsto para {{ income.expectedDate | date: 'dd/MM/yyyy' : 'UTC' : 'pt-BR' }}</p>
+            </div>
+            <span
+              class="status-badge"
+              [class.status-badge--pending]="income.status === 'PENDING'"
+              [class.status-badge--received]="income.status === 'RECEIVED'"
+              [class.status-badge--canceled]="income.status === 'CANCELED'"
+            >
+              {{ statusLabel(income.status) }}
+            </span>
+          </header>
+          <section class="income-card__amount">
+            <strong>{{ income.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+            <span>Conta: {{ income.financialAccountName ?? 'Definir ao receber' }}</span>
+          </section>
+          @if (income.notes) {
+            <p class="income-notes">{{ income.notes }}</p>
+          }
+          <footer class="income-card__actions">
+            @if (income.status === 'PENDING') {
+              <button class="button button--success" type="button" (click)="openReceive(income)">
+                Marcar como recebido
+              </button>
+              <button class="button button--secondary" type="button" (click)="openEdit(income)">
+                Editar
+              </button>
+              <button
+                class="button button--warning"
+                type="button"
+                (click)="cancelingIncome.set(income)"
+              >
+                Cancelar
+              </button>
+            } @else if (income.status === 'RECEIVED') {
+              <span class="receipt-hint">Efetivado em conta</span>
+            } @else {
+              <span class="receipt-hint">Fora da projeção</span>
+            }
+          </footer>
+        </article>
+      }
+    </section>
+  }
+
+  @if (showIncomeForm()) {
+    <div class="modal-backdrop" (click)="closeIncomeForm()"></div>
+    <section
+      class="modal-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="income-form-title"
+    >
+      <header>
+        <h2 id="income-form-title">
+          {{ editingIncome() ? 'Editar recebimento' : 'Novo recebimento' }}
+        </h2>
+        <button type="button" class="icon-button" aria-label="Fechar" (click)="closeIncomeForm()">
+          ×
+        </button>
+      </header>
+      <form [formGroup]="incomeForm" (ngSubmit)="saveIncome()">
+        <label>
+          <span>Descrição</span>
+          <input type="text" formControlName="description" autocomplete="off" />
+        </label>
+        <div class="form-grid">
+          <label>
+            <span>Valor</span>
+            <input appCurrencyMask type="text" inputmode="decimal" formControlName="amount" />
+          </label>
+          <label>
+            <span>Data prevista</span>
+            <input type="date" formControlName="expectedDate" />
+          </label>
+        </div>
+        <label>
+          <span>Conta de destino</span>
+          <select formControlName="financialAccountId">
+            <option value="">Definir ao receber</option>
+            @for (account of store.activeAccounts(); track account.id) {
+              <option [value]="account.id">{{ account.name }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>Observação</span>
+          <textarea rows="3" formControlName="notes"></textarea>
+        </label>
+        <div class="modal-actions">
+          <button class="button button--secondary" type="button" (click)="closeIncomeForm()">
+            Cancelar
+          </button>
+          <button class="button button--primary" type="submit" [disabled]="store.submitting()">
+            Salvar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (receivingIncome(); as income) {
+    <div class="modal-backdrop" (click)="closeReceive()"></div>
+    <section
+      class="modal-panel modal-panel--compact"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="receive-title"
+    >
+      <header>
+        <h2 id="receive-title">Efetivar recebimento</h2>
+        <button type="button" class="icon-button" aria-label="Fechar" (click)="closeReceive()">
+          ×
+        </button>
+      </header>
+      <p class="modal-copy">
+        {{ income.description }} será lançado como crédito real na conta selecionada.
+      </p>
+      <form [formGroup]="receiveForm" (ngSubmit)="confirmReceive()">
+        <label>
+          <span>Conta</span>
+          <select formControlName="financialAccountId">
+            @for (account of store.activeAccounts(); track account.id) {
+              <option [value]="account.id">{{ account.name }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>Data do recebimento</span>
+          <input type="date" formControlName="receivedDate" />
+        </label>
+        <div class="modal-actions">
+          <button class="button button--secondary" type="button" (click)="closeReceive()">
+            Voltar
+          </button>
+          <button class="button button--success" type="submit" [disabled]="store.submitting()">
+            Confirmar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (cancelingIncome(); as income) {
+    <div class="modal-backdrop" (click)="cancelingIncome.set(null)"></div>
+    <section
+      class="modal-panel modal-panel--compact"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cancel-title"
+    >
+      <header><h2 id="cancel-title">Cancelar recebimento</h2></header>
+      <p class="modal-copy">{{ income.description }} deixará de participar das projeções.</p>
+      <div class="modal-actions">
+        <button class="button button--secondary" type="button" (click)="cancelingIncome.set(null)">
+          Voltar
+        </button>
+        <button
+          class="button button--warning"
+          type="button"
+          [disabled]="store.submitting()"
+          (click)="confirmCancel()"
+        >
+          Cancelar recebimento
+        </button>
+      </div>
+    </section>
+  }
+</main>

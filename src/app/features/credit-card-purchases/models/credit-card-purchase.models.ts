@@ -1,6 +1,7 @@
 import { CreditCardBrand } from '../../credit-cards/models/credit-card.models';
 
 export type CreditCardPurchaseStatus = 'EM_ANDAMENTO' | 'FINALIZADA';
+export type CreditCardPurchaseType = 'SINGLE' | 'INSTALLMENT';
 export type CreditCardInstallmentStatus = 'PENDING' | 'PAID';
 export type CreditCardInstallmentStatusFilter = 'ALL' | CreditCardInstallmentStatus;
 export type CreditCardPurchaseSortOption =
@@ -29,8 +30,12 @@ export interface CreditCardPurchase {
   description: string;
   totalAmount: number;
   purchaseDate: string;
+  purchaseType: CreditCardPurchaseType;
   installmentCount: number;
   installmentAmount: number;
+  invoiceCompetenceYear: number;
+  invoiceCompetenceMonth: number;
+  invoiceDueDate: string | null;
   creditCardId: string;
   creditCardName: string;
   creditCardBrand: CreditCardBrand;
@@ -58,7 +63,9 @@ export interface CreditCardPurchasePayload {
   creditCardId: string;
   totalAmount: number;
   purchaseDate: string;
-  installmentCount: number;
+  purchaseType: CreditCardPurchaseType;
+  financialAccountId?: string | null;
+  installmentCount?: number;
 }
 
 export interface CreditCardMonthlyPurchaseInstallment {

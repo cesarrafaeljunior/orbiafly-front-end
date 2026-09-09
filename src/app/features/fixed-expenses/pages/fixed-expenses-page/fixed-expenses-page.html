@@ -298,6 +298,7 @@
             <footer class="expense-actions">
               <button
                 class="action-button action-button--primary"
+                [class.action-button--warning]="item.status === 'PAID'"
                 type="button"
                 [disabled]="store.busyIds().has(item.occurrenceId)"
                 (click)="changePayment(item)"
@@ -352,22 +353,22 @@
             </button>
           }
         </div>
-        <button
-          class="new-expense-card"
-          type="button"
-          [disabled]="store.categories().length === 0"
-          (click)="openCreate()"
-        >
-          <div class="new-expense-card__icon" aria-hidden="true">
-            <i class="ph ph-plus"></i>
-          </div>
-          <strong>Nova despesa</strong>
-          <small>Cadastre uma despesa recorrente</small>
-        </button>
       </section>
     }
   }
 </main>
+
+@if (!store.loading() && store.items().length > 0) {
+  <button
+    class="floating-new-expense"
+    type="button"
+    [disabled]="store.categories().length === 0"
+    (click)="openCreate()"
+  >
+    <i class="ph ph-plus" aria-hidden="true"></i>
+    <span>Nova despesa</span>
+  </button>
+}
 
 @if (showExpenseForm()) {
   <app-expense-form

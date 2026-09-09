@@ -2,17 +2,43 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AccountsApi } from '../../accounts/services/accounts-api';
 import { CreditCardsApi } from '../../credit-cards/services/credit-cards-api';
 import { ToastService } from '../../../shared/services/toast.service';
 import { CreditCardPurchasesApi } from './credit-card-purchases-api';
 import { CreditCardPurchasesStore } from './credit-card-purchases-store';
 
-const overview = {
-  totalCommitted: 3000,
-  activePurchaseCount: 1,
-  futureInstallmentCount: 10,
-  currentMonthInstallmentsAmount: 300,
-  purchases: [],
+const monthly = {
+  year: 2026,
+  month: 9,
+  summary: {
+    total: 0,
+    paidTotal: 0,
+    pendingTotal: 0,
+    totalCount: 0,
+    paidCount: 0,
+    pendingCount: 0,
+    paidPercentage: 0,
+  },
+  items: [],
+};
+
+const accountOverview = {
+  totalAvailableBalance: 1000,
+  activeCount: 1,
+  accounts: [
+    {
+      id: 'account-1',
+      name: 'Conta principal',
+      type: 'CHECKING',
+      institution: 'Banco',
+      openingBalance: 1000,
+      currentBalance: 1000,
+      active: true,
+      createdAt: '2026-08-01T00:00:00Z',
+      updatedAt: '2026-08-01T00:00:00Z',
+    },
+  ],
 };
 
 const cardOverview = {
@@ -41,11 +67,18 @@ const cardOverview = {
 
 describe('CreditCardPurchasesStore', () => {
   const api = {
-    getOverview: vi.fn(),
+    getMonthly: vi.fn(),
+    get: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
+    updateInstallmentAmount: vi.fn(),
+    updateInstallmentStatus: vi.fn(),
     delete: vi.fn(),
   };
   const cardsApi = {
+    getOverview: vi.fn(),
+  };
+  const accountsApi = {
     getOverview: vi.fn(),
   };
   const toastService = {
@@ -58,13 +91,15 @@ describe('CreditCardPurchasesStore', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    api.getOverview.mockReturnValue(of(overview));
+    api.getMonthly.mockReturnValue(of(monthly));
     cardsApi.getOverview.mockReturnValue(of(cardOverview));
+    accountsApi.getOverview.mockReturnValue(of(accountOverview));
     TestBed.configureTestingModule({
       providers: [
         CreditCardPurchasesStore,
         { provide: CreditCardPurchasesApi, useValue: api },
         { provide: CreditCardsApi, useValue: cardsApi },
+        { provide: AccountsApi, useValue: accountsApi },
         { provide: ToastService, useValue: toastService },
       ],
     });
@@ -74,9 +109,11 @@ describe('CreditCardPurchasesStore', () => {
   it('loads purchases and active cards', async () => {
     await store.initialize();
 
-    expect(api.getOverview).toHaveBeenCalled();
+    expect(api.getMonthly).toHaveBeenCalled();
     expect(cardsApi.getOverview).toHaveBeenCalledWith(false);
-    expect(store.overview()).toEqual(overview);
+    expect(accountsApi.getOverview).toHaveBeenCalledWith(false);
+    expect(store.items()).toEqual(monthly.items);
+    expect(store.summary()).toEqual(monthly.summary);
     expect(store.activeCards()).toEqual(cardOverview.cards);
   });
 
@@ -90,13 +127,14 @@ describe('CreditCardPurchasesStore', () => {
         creditCardId: 'card-1',
         totalAmount: 3000,
         purchaseDate: '2026-08-01',
+        purchaseType: 'INSTALLMENT',
         installmentCount: 10,
       }),
     ).resolves.toBe(true);
     await expect(store.delete('purchase-1')).resolves.toBe(true);
 
-    expect(toastService.success).toHaveBeenCalledWith('Compra parcelada registrada com sucesso.');
-    expect(toastService.success).toHaveBeenCalledWith('Compra parcelada excluída com sucesso.');
+    expect(toastService.success).toHaveBeenCalledWith('Compra registrada com sucesso.');
+    expect(toastService.success).toHaveBeenCalledWith('Compra excluída com sucesso.');
   });
 
   it('shows API error details without a local toast implementation', async () => {
@@ -116,6 +154,7 @@ describe('CreditCardPurchasesStore', () => {
         creditCardId: 'card-1',
         totalAmount: 3000,
         purchaseDate: '2026-08-01',
+        purchaseType: 'INSTALLMENT',
         installmentCount: 10,
       }),
     ).resolves.toBe(false);

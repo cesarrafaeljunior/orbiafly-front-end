@@ -41,13 +41,23 @@ describe('authInterceptor', () => {
     request.flush({});
   });
 
-  it('does not add bearer token to auth requests', () => {
+  it('does not add bearer token to public auth requests', () => {
     const http = TestBed.inject(HttpClient);
 
     http.post('/api/v1/auth/login', {}).subscribe();
 
     const request = httpTesting.expectOne('/api/v1/auth/login');
     expect(request.request.headers.has('Authorization')).toBeFalsy();
+    request.flush({});
+  });
+
+  it('adds bearer token to authenticated auth requests', () => {
+    const http = TestBed.inject(HttpClient);
+
+    http.post('/api/v1/auth/change-password', {}).subscribe();
+
+    const request = httpTesting.expectOne('/api/v1/auth/change-password');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer jwt-token');
     request.flush({});
   });
 });

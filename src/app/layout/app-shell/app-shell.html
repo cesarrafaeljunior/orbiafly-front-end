@@ -15,8 +15,8 @@
   </header>
 
   @if (drawerOpen()) {
-    <div class="drawer-backdrop" (mousedown)="closeDrawer()">
-      <div class="drawer-panel" (mousedown)="$event.stopPropagation()">
+    <div class="drawer-backdrop" (click)="closeDrawer()">
+      <div class="drawer-panel" (click)="$event.stopPropagation()">
         <app-sidebar [drawer]="true" (closeRequested)="closeDrawer()" />
       </div>
     </div>

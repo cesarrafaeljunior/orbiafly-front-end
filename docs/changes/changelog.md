@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-06
+
+- Adicionada recuperação de senha na tela de login com solicitação e confirmação de código temporário.
+- Adicionada tela `/perfil` para usuário autenticado alterar a senha atual por uma nova.
+- O cartão do usuário na sidebar passa a abrir o perfil da conta logada.
+
 ## 2026-08-31
 
 - Implementada a tela de Compras parceladas com resumo financeiro, busca, filtros, ordenacao, cards responsivos e modal de cadastro.

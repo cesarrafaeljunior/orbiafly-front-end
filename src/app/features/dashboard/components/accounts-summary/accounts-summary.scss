@@ -4,13 +4,15 @@
 
 .accounts-band {
   align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: linear-gradient(145deg, var(--surface-elevated), var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary-light-blue) 16%, var(--border));
   border-left: 3px solid var(--primary-light-blue);
   display: grid;
-  gap: var(--space-5);
-  grid-template-columns: minmax(12rem, 1fr) minmax(0, 2fr);
-  padding: var(--space-5);
+  gap: var(--space-6);
+  grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 2.2fr);
+  padding: var(--space-6);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .accounts-band > div:first-child,
@@ -25,17 +27,19 @@
 }
 
 .accounts-band > div:first-child > strong {
-  font-size: var(--font-size-2xl);
+  font-size: clamp(1.4rem, 2.8vw, 1.9rem);
 }
 
 .account-list {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .account-list strong {
   color: var(--text-primary);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .accounts-band a {
@@ -68,7 +72,9 @@
     gap: var(--space-3);
     padding: 0;
     border: 0;
+    border-radius: 0;
     background: transparent;
+    box-shadow: none;
     margin-bottom: var(--space-4);
   }
   .accounts-band > div:first-child {

@@ -17,6 +17,13 @@ export const routes: Routes = [
         (component) => component.RegisterPage,
       ),
   },
+  {
+    path: 'recuperar-senha',
+    loadComponent: () =>
+      import('./features/auth/pages/forgot-password-page/forgot-password-page').then(
+        (component) => component.ForgotPasswordPage,
+      ),
+  },
   { path: 'cadastro', redirectTo: 'register' },
   {
     path: '',
@@ -54,16 +61,23 @@ export const routes: Routes = [
       {
         path: 'compras-parceladas',
         loadComponent: () =>
-          import(
-            './features/credit-card-purchases/pages/credit-card-purchases-page/credit-card-purchases-page'
-          ).then((component) => component.CreditCardPurchasesPage),
+          import('./features/credit-card-purchases/pages/credit-card-purchases-page/credit-card-purchases-page').then(
+            (component) => component.CreditCardPurchasesPage,
+          ),
       },
       {
-        path: 'parcelados',
+        path: 'recebimentos',
         loadComponent: () =>
-          import(
-            './features/installment-expenses/pages/installment-expenses-page/installment-expenses-page'
-          ).then((component) => component.InstallmentExpensesPage),
+          import('./features/expected-incomes/pages/expected-incomes-page/expected-incomes-page').then(
+            (component) => component.ExpectedIncomesPage,
+          ),
+      },
+      {
+        path: 'perfil',
+        loadComponent: () =>
+          import('./features/profile/pages/profile-page/profile-page').then(
+            (component) => component.ProfilePage,
+          ),
       },
       {
         path: 'emprestimos',

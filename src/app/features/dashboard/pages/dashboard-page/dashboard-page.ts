@@ -1,6 +1,7 @@
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { HEALTH_LEVEL_LABELS } from '../../models/dashboard.models';
 import { DashboardStore } from '../../services/dashboard-store';
 import { AccountsSummary } from '../../components/accounts-summary/accounts-summary';
 
@@ -13,6 +14,7 @@ import { AccountsSummary } from '../../components/accounts-summary/accounts-summ
 })
 export class DashboardPage implements OnInit {
   protected readonly store = inject(DashboardStore);
+  protected readonly healthLabels = HEALTH_LEVEL_LABELS;
 
   protected readonly categoriesExpanded = signal(false);
   protected readonly categories = computed(() =>
@@ -20,6 +22,9 @@ export class DashboardPage implements OnInit {
   );
   protected readonly visibleCategories = computed(() =>
     this.categoriesExpanded() ? this.categories() : this.categories().slice(0, 3),
+  );
+  protected readonly visibleProjectionEvents = computed(() =>
+    (this.store.dashboard()?.projection.events ?? []).slice(0, 6),
   );
 
   protected moveMonth(offset: number): void {

@@ -1,0 +1,68 @@
+<main class="profile-workspace">
+  <header class="page-heading">
+    <div>
+      <h1>Perfil</h1>
+      <p class="page-description">Gerencie o acesso da sua conta.</p>
+    </div>
+  </header>
+
+  <section class="profile-grid">
+    <article class="profile-panel" aria-labelledby="profile-user-title">
+      <div class="profile-panel__icon" aria-hidden="true">
+        <i class="ph ph-user-circle"></i>
+      </div>
+
+      <div>
+        <h2 id="profile-user-title">{{ user()?.username ?? 'Usuário' }}</h2>
+        <p>{{ user()?.email ?? 'Minha conta' }}</p>
+      </div>
+    </article>
+
+    <section class="profile-panel profile-panel--form" aria-labelledby="change-password-title">
+      <header>
+        <div>
+          <h2 id="change-password-title">Alterar senha</h2>
+          <p>Confirme sua senha atual antes de definir a nova.</p>
+        </div>
+      </header>
+
+      <form class="profile-form" [formGroup]="form" (ngSubmit)="submit()">
+        <label>
+          <span>Senha atual</span>
+          <input
+            type="password"
+            formControlName="currentPassword"
+            autocomplete="current-password"
+          />
+        </label>
+
+        <label>
+          <span>Nova senha</span>
+          <input type="password" formControlName="newPassword" autocomplete="new-password" />
+          @if (submitted() && form.controls.newPassword.invalid) {
+            <small>Mínimo de 8 caracteres.</small>
+          }
+        </label>
+
+        <label>
+          <span>Confirmar nova senha</span>
+          <input type="password" formControlName="confirmPassword" autocomplete="new-password" />
+          @if (submitted() && passwordsDoNotMatch()) {
+            <small>As senhas precisam ser iguais.</small>
+          }
+        </label>
+
+        @if (error()) {
+          <p class="profile-form__error">Não foi possível alterar a senha.</p>
+        }
+
+        <footer>
+          <button class="button button--primary" type="submit" [disabled]="authStore.loading()">
+            <i class="ph ph-lock-key" aria-hidden="true"></i>
+            {{ authStore.loading() ? 'Salvando...' : 'Salvar senha' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </section>
+</main>

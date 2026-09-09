@@ -4,6 +4,8 @@ import { firstValueFrom } from 'rxjs';
 import {
   ApiProblem,
   FinancialAccount,
+  AccountTransferOverview,
+  AccountTransferPayload,
   FinancialAccountPayload,
   FinancialAccountsOverview,
   FinancialTransaction,
@@ -17,6 +19,12 @@ const EMPTY_OVERVIEW: FinancialAccountsOverview = {
   accounts: [],
 };
 
+const EMPTY_TRANSFERS: AccountTransferOverview = {
+  transferredTotal: 0,
+  transferCount: 0,
+  items: [],
+};
+
 @Injectable()
 export class AccountsStore {
   private readonly api = inject(AccountsApi);
@@ -24,6 +32,7 @@ export class AccountsStore {
 
   readonly overview = signal<FinancialAccountsOverview>(EMPTY_OVERVIEW);
   readonly transactions = signal<FinancialTransaction[]>([]);
+  readonly transfers = signal<AccountTransferOverview>(EMPTY_TRANSFERS);
   readonly selectedAccountId = signal<string | null>(null);
   readonly includeInactive = signal(false);
   readonly loading = signal(true);
@@ -37,7 +46,7 @@ export class AccountsStore {
   );
 
   async initialize(): Promise<void> {
-    await this.loadAccounts();
+    await Promise.all([this.loadAccounts(), this.loadTransfers()]);
   }
 
   async loadAccounts(): Promise<void> {
@@ -57,16 +66,26 @@ export class AccountsStore {
     }
   }
 
+  async loadTransfers(): Promise<void> {
+    try {
+      this.transfers.set(await firstValueFrom(this.api.getTransfers()));
+    } catch (error: unknown) {
+      this.toastService.error(
+        this.errorMessage(error, 'Não foi possível carregar as transferências.'),
+      );
+    }
+  }
+
   async setIncludeInactive(value: boolean): Promise<void> {
     this.includeInactive.set(value);
-    await this.loadAccounts();
+    await Promise.all([this.loadAccounts(), this.loadTransfers()]);
   }
 
   async create(payload: Required<FinancialAccountPayload>): Promise<boolean> {
     return this.runSubmission(
       async () => {
         await firstValueFrom(this.api.create(payload));
-        await this.loadAccounts();
+        await Promise.all([this.loadAccounts(), this.loadTransfers()]);
       },
       'Conta criada com saldo inicial registrado.',
       'Não foi possível criar a conta.',
@@ -77,7 +96,7 @@ export class AccountsStore {
     return this.runSubmission(
       async () => {
         await firstValueFrom(this.api.update(account.id, payload));
-        await this.loadAccounts();
+        await Promise.all([this.loadAccounts(), this.loadTransfers()]);
       },
       'Dados da conta atualizados.',
       'Não foi possível atualizar a conta.',
@@ -88,7 +107,7 @@ export class AccountsStore {
     return this.runSubmission(
       async () => {
         await firstValueFrom(this.api.deactivate(account.id));
-        await this.loadAccounts();
+        await Promise.all([this.loadAccounts(), this.loadTransfers()]);
       },
       'Conta desativada. O histórico foi preservado.',
       'Não foi possível desativar a conta.',
@@ -99,7 +118,7 @@ export class AccountsStore {
     return this.runSubmission(
       async () => {
         await firstValueFrom(this.api.reactivate(account.id));
-        await this.loadAccounts();
+        await Promise.all([this.loadAccounts(), this.loadTransfers()]);
       },
       'Conta reativada. O histórico foi preservado.',
       'Não foi possível reativar a conta.',
@@ -113,7 +132,7 @@ export class AccountsStore {
         if (this.selectedAccountId() === account.id) {
           this.closeTransactions();
         }
-        await this.loadAccounts();
+        await Promise.all([this.loadAccounts(), this.loadTransfers()]);
       },
       'Conta excluída definitivamente.',
       'Não foi possível excluir a conta.',
@@ -140,6 +159,17 @@ export class AccountsStore {
     this.transactions.set([]);
   }
 
+  async transfer(payload: AccountTransferPayload): Promise<boolean> {
+    return this.runSubmission(
+      async () => {
+        await firstValueFrom(this.api.transfer(payload));
+        await Promise.all([this.loadAccounts(), this.loadTransfers()]);
+      },
+      'Transferência realizada com sucesso.',
+      'Não foi possível realizar a transferência.',
+    );
+  }
+
   async adjust(
     account: FinancialAccount,
     targetBalance: number,
@@ -148,7 +178,7 @@ export class AccountsStore {
     return this.runSubmission(
       async () => {
         await firstValueFrom(this.api.adjustBalance(account.id, targetBalance, description));
-        await this.loadAccounts();
+        await Promise.all([this.loadAccounts(), this.loadTransfers()]);
         if (this.selectedAccountId() === account.id) {
           await this.openTransactions(this.selectedAccount() ?? account);
         }

@@ -68,7 +68,12 @@
   </nav>
 
   <footer class="sidebar__user">
-    <div class="sidebar__user-card" [title]="collapsed() ? userTitle() : null">
+    <a
+      class="sidebar__user-card"
+      routerLink="/perfil"
+      [title]="collapsed() ? userTitle() : null"
+      (click)="closeRequested.emit()"
+    >
       <i class="ph ph-user-circle" aria-hidden="true"></i>
       @if (!collapsed()) {
         <span>
@@ -79,7 +84,7 @@
           }
         </span>
       }
-    </div>
+    </a>
 
     <button
       class="sidebar__logout"

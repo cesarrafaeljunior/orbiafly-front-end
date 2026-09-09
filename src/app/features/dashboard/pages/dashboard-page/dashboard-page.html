@@ -39,6 +39,105 @@
   } @else if (store.dashboard(); as dashboard) {
     <app-accounts-summary [accounts]="dashboard.accounts" />
 
+    <section class="projection-panel" aria-label="Projeção financeira mensal">
+      <header>
+        <div>
+          <p class="section-label">Projeção mensal</p>
+          <h2>Saldo real vs saldo projetado</h2>
+        </div>
+        <span
+          class="health-badge"
+          [class.health-badge--critical]="dashboard.projection.healthLevel === 'CRITICAL'"
+          [class.health-badge--attention]="dashboard.projection.healthLevel === 'ATTENTION'"
+          [class.health-badge--healthy]="dashboard.projection.healthLevel === 'HEALTHY'"
+          [class.health-badge--comfortable]="dashboard.projection.healthLevel === 'COMFORTABLE'"
+        >
+          {{ healthLabels[dashboard.projection.healthLevel] }}
+        </span>
+      </header>
+      <div class="projection-grid">
+        <div>
+          <span>Saldo atual</span>
+          <strong>{{
+            dashboard.projection.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}</strong>
+          <small>dinheiro real nas contas</small>
+        </div>
+        <div class="projection-grid__inflow">
+          <span>A receber</span>
+          <strong
+            >+
+            {{
+              dashboard.projection.expectedIncomeTotal
+                | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+            }}</strong
+          >
+          <small>previsto na competência</small>
+        </div>
+        <div class="projection-grid__outflow">
+          <span>Compromissos</span>
+          <strong
+            >-
+            {{
+              dashboard.projection.expectedExpenseTotal
+                | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+            }}</strong
+          >
+          <small>pendências futuras</small>
+        </div>
+        <div>
+          <span>Saldo final projetado</span>
+          <strong>{{
+            dashboard.projection.projectedFinalBalance
+              | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}</strong>
+          <small>estimativa do mês</small>
+        </div>
+        <div class="projection-grid__minimum">
+          <span>Menor saldo previsto</span>
+          <strong>{{
+            dashboard.projection.minimumProjectedBalance
+              | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}</strong>
+          <small
+            >em
+            {{
+              dashboard.projection.minimumProjectedBalanceDate | date: 'dd/MM' : 'UTC' : 'pt-BR'
+            }}</small
+          >
+        </div>
+      </div>
+      <p class="projection-insight">{{ dashboard.projection.insight }}</p>
+      @if (visibleProjectionEvents().length > 0) {
+        <div class="projection-timeline" aria-label="Linha do tempo projetada">
+          @for (event of visibleProjectionEvents(); track event.sourceType + event.sourceId) {
+            <div
+              class="projection-event"
+              [class.projection-event--inflow]="event.direction === 'INFLOW'"
+            >
+              <time [attr.datetime]="event.date">{{
+                event.date | date: 'dd/MM' : 'UTC' : 'pt-BR'
+              }}</time>
+              <div>
+                <strong>{{ event.description }}</strong>
+                <span
+                  >Saldo:
+                  {{
+                    event.projectedBalanceAfterEvent
+                      | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+                  }}</span
+                >
+              </div>
+              <strong>
+                {{ event.direction === 'INFLOW' ? '+' : '-' }}
+                {{ event.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+              </strong>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
     @if (dashboard.summary.totalCount === 0) {
       <section class="empty-state">
         <span class="empty-state__mark" aria-hidden="true">0</span>

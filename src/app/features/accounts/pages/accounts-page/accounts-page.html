@@ -4,391 +4,620 @@
       <h1>Contas</h1>
       <p class="page-description">Acompanhe onde está seu saldo e como ele se movimentou.</p>
     </div>
+    <button
+      class="button button--primary"
+      type="button"
+      [disabled]="activeAccounts().length < 2"
+      (click)="openTransfer()"
+    >
+      <i class="ph ph-arrows-left-right" aria-hidden="true"></i>
+      Transferir
+    </button>
   </header>
   @if (store.overview().accounts.length > 0) {
-  <section class="accounts-toolbar">
-    <div class="accounts-overview">
-      <span>Saldo disponível total</span>
+    <section class="accounts-toolbar">
+      <div class="accounts-overview">
+        <span>Saldo disponível total</span>
 
-      <strong>
-        {{
-        store.overview().totalAvailableBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
-        }}
-      </strong>
+        <strong>
+          {{
+            store.overview().totalAvailableBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}
+        </strong>
 
-      <small>
-        {{ store.overview().activeCount }}
-        {{ store.overview().activeCount === 1 ? 'conta ativa' : 'contas ativas' }}
-      </small>
-    </div>
-
-    <div class="accounts-controls">
-      <div class="account-search">
-        <i class="ph ph-magnifying-glass account-search__icon" aria-hidden="true"></i>
-
-        <input type="search" aria-label="Buscar contas" placeholder="Buscar contas..." [value]="searchTerm()"
-          (input)="updateSearch($event)" />
+        <small>
+          {{ store.overview().activeCount }}
+          {{ store.overview().activeCount === 1 ? 'conta ativa' : 'contas ativas' }}
+        </small>
       </div>
 
-      <div class="status-filter" aria-label="Filtrar contas por status">
-        <button type="button" [class.status-filter__option--active]="statusFilter() === 'ACTIVE'"
-          [disabled]="hasOnlyInactiveAccounts()"
-          (click)="changeStatusFilter('ACTIVE')">
-          <span class="status-dot status-dot--active"></span>
-          Ativas
-        </button>
+      <div class="accounts-controls">
+        <div class="account-search">
+          <i class="ph ph-magnifying-glass account-search__icon" aria-hidden="true"></i>
 
-        <button type="button" [class.status-filter__option--active]="statusFilter() === 'INACTIVE'"
-          (click)="changeStatusFilter('INACTIVE')">
-          <span class="status-dot"></span>
-          Inativas
-        </button>
+          <input
+            type="search"
+            aria-label="Buscar contas"
+            placeholder="Buscar contas..."
+            [value]="searchTerm()"
+            (input)="updateSearch($event)"
+          />
+        </div>
 
-        <button type="button" [class.status-filter__option--active]="statusFilter() === 'ALL'"
-          (click)="changeStatusFilter('ALL')">
-          Todas
-        </button>
+        <div class="status-filter" aria-label="Filtrar contas por status">
+          <button
+            type="button"
+            [class.status-filter__option--active]="statusFilter() === 'ACTIVE'"
+            [disabled]="hasOnlyInactiveAccounts()"
+            (click)="changeStatusFilter('ACTIVE')"
+          >
+            <span class="status-dot status-dot--active"></span>
+            Ativas
+          </button>
+
+          <button
+            type="button"
+            [class.status-filter__option--active]="statusFilter() === 'INACTIVE'"
+            (click)="changeStatusFilter('INACTIVE')"
+          >
+            <span class="status-dot"></span>
+            Inativas
+          </button>
+
+          <button
+            type="button"
+            [class.status-filter__option--active]="statusFilter() === 'ALL'"
+            (click)="changeStatusFilter('ALL')"
+          >
+            Todas
+          </button>
+        </div>
+
+        <label class="sort-control">
+          <span>Ordenar por</span>
+
+          <select [value]="sortOption()" (change)="changeSort($event)">
+            <option value="NAME_ASC">Nome A-Z</option>
+            <option value="NAME_DESC">Nome Z-A</option>
+            <option value="BALANCE_DESC">Maior saldo</option>
+            <option value="BALANCE_ASC">Menor saldo</option>
+          </select>
+        </label>
       </div>
-
-      <label class="sort-control">
-        <span>Ordenar por</span>
-
-        <select [value]="sortOption()" (change)="changeSort($event)">
-          <option value="NAME_ASC">Nome A-Z</option>
-          <option value="NAME_DESC">Nome Z-A</option>
-          <option value="BALANCE_DESC">Maior saldo</option>
-          <option value="BALANCE_ASC">Menor saldo</option>
-        </select>
-      </label>
-    </div>
-  </section>
+    </section>
   }
   @if (store.error()) {
-  <section class="feedback" role="alert">
-    <div>
-      <strong>Não foi possível concluir a operação</strong>
-      <p>{{ store.error() }}</p>
-    </div>
-    <button class="button button--secondary" type="button" (click)="store.loadAccounts()">
-      Tentar novamente
-    </button>
-  </section>
+    <section class="feedback" role="alert">
+      <div>
+        <strong>Não foi possível concluir a operação</strong>
+        <p>{{ store.error() }}</p>
+      </div>
+      <button class="button button--secondary" type="button" (click)="store.loadAccounts()">
+        Tentar novamente
+      </button>
+    </section>
   }
 
   @if (store.loading()) {
-  <section class="accounts-loading" aria-live="polite" aria-label="Carregando contas">
-    @for (item of [1, 2, 3]; track item) {
-    <div></div>
-    }
-  </section>
+    <section class="accounts-loading" aria-live="polite" aria-label="Carregando contas">
+      @for (item of [1, 2, 3]; track item) {
+        <div></div>
+      }
+    </section>
   } @else if (store.overview().accounts.length === 0) {
-  <section class="empty-state">
-    <div class="empty-state__icon" aria-hidden="true">
-      <i class="ph ph-wallet"></i>
-    </div>
-
-    <div class="empty-state__content">
-      <h2>Nenhuma conta cadastrada</h2>
-
-      <p>Cadastre sua primeira conta para acompanhar seus saldos e movimentações.</p>
-    </div>
-
-    <button class="button button--primary" type="button" (click)="openCreate()">
-      <i class="ph ph-plus"></i>
-      Adicionar conta
-    </button>
-  </section>
-  } @else if (filteredAccounts().length === 0) {
-  <section class="empty-state">
-    <span aria-hidden="true">⌕</span>
-
-    <h2>Nenhuma conta encontrada</h2>
-
-    <p>Nenhuma conta corresponde à busca ou aos filtros selecionados.</p>
-  </section>
-  } @else {
-  <section class="accounts-grid" aria-label="Contas financeiras">
-    @for (account of filteredAccounts(); track account.id) {
-    <article class="account-card" [class.account-card--inactive]="!account.active">
-      <header class="account-card__header">
-        <div class="account-identity">
-          <div class="account-avatar" aria-hidden="true">
-            <i class="ph ph-bank"></i>
-          </div>
-
-          <div>
-            <h2>{{ account.name }}</h2>
-
-            <p>
-              {{ account.institution || typeLabels[account.type] }}
-            </p>
-          </div>
-        </div>
-
-        <span class="account-status" [class.account-status--inactive]="!account.active">
-          <i class="ph" [class.ph-check-circle]="account.active" [class.ph-pause-circle]="!account.active"
-            aria-hidden="true"></i>
-
-          {{ account.active ? 'Ativa' : 'Inativa' }}
-        </span>
-      </header>
-
-      <div class="account-balance">
-        <span>
-          {{ account.active ? 'Saldo atual' : 'Último saldo' }}
-        </span>
-
-        <strong>
-          {{ account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
-        </strong>
-
-        <small>{{ typeLabels[account.type] }}</small>
+    <section class="empty-state">
+      <div class="empty-state__icon" aria-hidden="true">
+        <i class="ph ph-wallet"></i>
       </div>
 
-      <footer class="account-card__actions">
-        <button class="action-button account-action account-action--primary" type="button"
-          (click)="store.openTransactions(account)">
-          <i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i>
-          Movimentações
-        </button>
+      <div class="empty-state__content">
+        <h2>Nenhuma conta cadastrada</h2>
 
-        @if (account.active) {
-        <div class="account-card__secondary-actions">
-          <button class="action-button account-action" type="button" (click)="openEdit(account)">
-            <i class="ph ph-pencil-simple" aria-hidden="true"></i>
-            Editar
-          </button>
+        <p>Cadastre sua primeira conta para acompanhar seus saldos e movimentações.</p>
+      </div>
 
-          <button class="action-button account-action" type="button" (click)="openAdjustment(account)">
-            <i class="ph ph-sliders-horizontal" aria-hidden="true"></i>
-            Ajustar saldo
-          </button>
-
-          <button class="action-button action-button--danger account-action" type="button"
-            (click)="deactivatingAccount.set(account)">
-            <i class="ph ph-power" aria-hidden="true"></i>
-            Desativar
-          </button>
-        </div>
-        } @else {
-        <div class="account-card__secondary-actions">
-          <button class="action-button account-action" type="button" (click)="store.reactivate(account)">
-            <i class="ph ph-arrow-clockwise" aria-hidden="true"></i>
-            Reativar
-          </button>
-
-          <button class="action-button action-button--danger account-action" type="button"
-            (click)="deletingAccount.set(account)">
-            <i class="ph ph-trash" aria-hidden="true"></i>
-            Excluir
-          </button>
-        </div>
-        }
-      </footer>
-    </article>
-    }
-    @if (statusFilter() !== 'INACTIVE') {
-    <button class="new-account-card" type="button" (click)="openCreate()">
-      <div class="new-account-card__icon">
+      <button class="button button--primary" type="button" (click)="openCreate()">
         <i class="ph ph-plus"></i>
-      </div>
+        Adicionar conta
+      </button>
+    </section>
+  } @else if (filteredAccounts().length === 0) {
+    <section class="empty-state">
+      <span aria-hidden="true">⌕</span>
 
-      <strong>Adicionar nova conta</strong>
+      <h2>Nenhuma conta encontrada</h2>
 
-      <small> Cadastre uma nova conta financeira para acompanhar seu saldo. </small>
-    </button>
-    }
-  </section>
+      <p>Nenhuma conta corresponde à busca ou aos filtros selecionados.</p>
+    </section>
+  } @else {
+    <section class="accounts-grid" aria-label="Contas financeiras">
+      @for (account of filteredAccounts(); track account.id) {
+        <article class="account-card" [class.account-card--inactive]="!account.active">
+          <header class="account-card__header">
+            <div class="account-identity">
+              <div class="account-avatar" aria-hidden="true">
+                <i class="ph ph-bank"></i>
+              </div>
+
+              <div>
+                <h2>{{ account.name }}</h2>
+
+                <p>
+                  {{ account.institution || typeLabels[account.type] }}
+                </p>
+              </div>
+            </div>
+
+            <span class="account-status" [class.account-status--inactive]="!account.active">
+              <i
+                class="ph"
+                [class.ph-check-circle]="account.active"
+                [class.ph-pause-circle]="!account.active"
+                aria-hidden="true"
+              ></i>
+
+              {{ account.active ? 'Ativa' : 'Inativa' }}
+            </span>
+          </header>
+
+          <div class="account-balance">
+            <span>
+              {{ account.active ? 'Saldo atual' : 'Último saldo' }}
+            </span>
+
+            <strong>
+              {{ account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+            </strong>
+
+            <small>{{ typeLabels[account.type] }}</small>
+          </div>
+
+          <footer class="account-card__actions">
+            <button
+              class="action-button account-action account-action--primary"
+              type="button"
+              (click)="store.openTransactions(account)"
+            >
+              <i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i>
+              Movimentações
+            </button>
+
+            @if (account.active) {
+              <div class="account-card__secondary-actions">
+                <button
+                  class="action-button account-action"
+                  type="button"
+                  (click)="openEdit(account)"
+                >
+                  <i class="ph ph-pencil-simple" aria-hidden="true"></i>
+                  Editar
+                </button>
+
+                <button
+                  class="action-button account-action"
+                  type="button"
+                  [disabled]="activeAccounts().length < 2"
+                  (click)="openTransfer(account)"
+                >
+                  <i class="ph ph-arrows-left-right" aria-hidden="true"></i>
+                  Transferir
+                </button>
+
+                <button
+                  class="action-button account-action"
+                  type="button"
+                  (click)="openAdjustment(account)"
+                >
+                  <i class="ph ph-sliders-horizontal" aria-hidden="true"></i>
+                  Ajustar saldo
+                </button>
+
+                <button
+                  class="action-button action-button--danger account-action"
+                  type="button"
+                  (click)="deactivatingAccount.set(account)"
+                >
+                  <i class="ph ph-power" aria-hidden="true"></i>
+                  Desativar
+                </button>
+              </div>
+            } @else {
+              <div class="account-card__secondary-actions">
+                <button
+                  class="action-button account-action"
+                  type="button"
+                  (click)="store.reactivate(account)"
+                >
+                  <i class="ph ph-arrow-clockwise" aria-hidden="true"></i>
+                  Reativar
+                </button>
+
+                <button
+                  class="action-button action-button--danger account-action"
+                  type="button"
+                  (click)="deletingAccount.set(account)"
+                >
+                  <i class="ph ph-trash" aria-hidden="true"></i>
+                  Excluir
+                </button>
+              </div>
+            }
+          </footer>
+        </article>
+      }
+      @if (statusFilter() !== 'INACTIVE') {
+        <button class="new-account-card" type="button" (click)="openCreate()">
+          <div class="new-account-card__icon">
+            <i class="ph ph-plus"></i>
+          </div>
+
+          <strong>Adicionar nova conta</strong>
+
+          <small> Cadastre uma nova conta financeira para acompanhar seu saldo. </small>
+        </button>
+      }
+    </section>
   }
 </main>
 
 @if (store.selectedAccount(); as account) {
-<div class="panel-backdrop" (mousedown)="store.closeTransactions()">
-  <aside class="transactions-panel" role="dialog" aria-modal="true" aria-labelledby="transactions-title"
-    (mousedown)="$event.stopPropagation()">
-    <header>
-      <div>
-        <p class="eyebrow">Histórico da conta</p>
-        <h2 id="transactions-title">{{ account.name }}</h2>
-      </div>
-      <button class="icon-button" type="button" aria-label="Fechar" (click)="store.closeTransactions()">
-        ×
-      </button>
-    </header>
-    <section class="panel-balance">
-      <span>Saldo atual</span>
-      <strong>{{
-        account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
-        }}</strong>
-    </section>
-    <section class="transaction-list" aria-label="Movimentações">
-      @if (store.loadingTransactions()) {
-      <p class="panel-message">Carregando movimentações...</p>
-      } @else if (store.transactions().length === 0) {
-      <p class="panel-message">Nenhuma movimentação depois do saldo inicial.</p>
-      } @else {
-      @for (transaction of store.transactions(); track transaction.id) {
-      <article class="transaction-row">
-        <time [attr.datetime]="transaction.occurredOn">{{
-          transaction.occurredOn | date: 'dd/MM/yyyy' : 'UTC' : 'pt-BR'
-          }}</time>
+  <div class="panel-backdrop" (mousedown)="store.closeTransactions()">
+    <aside
+      class="transactions-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="transactions-title"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <header>
         <div>
-          <strong>{{ transaction.description }}</strong>
-          <span>{{ transactionLabel(transaction.type) }}</span>
+          <p class="eyebrow">Histórico da conta</p>
+          <h2 id="transactions-title">{{ account.name }}</h2>
         </div>
-        <strong [class.transaction-credit]="transaction.balanceEffect > 0">
-          {{ transaction.balanceEffect > 0 ? '+' : '' }}
-          {{ transaction.balanceEffect | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
-        </strong>
-      </article>
-      }
-      }
+        <button
+          class="icon-button"
+          type="button"
+          aria-label="Fechar"
+          (click)="store.closeTransactions()"
+        >
+          ×
+        </button>
+      </header>
+      <section class="panel-balance">
+        <span>Saldo atual</span>
+        <strong>{{
+          account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+        }}</strong>
+      </section>
+      <section class="transaction-list" aria-label="Movimentações">
+        @if (store.loadingTransactions()) {
+          <p class="panel-message">Carregando movimentações...</p>
+        } @else if (store.transactions().length === 0) {
+          <p class="panel-message">Nenhuma movimentação depois do saldo inicial.</p>
+        } @else {
+          @for (transaction of store.transactions(); track transaction.id) {
+            <article class="transaction-row">
+              <time [attr.datetime]="transaction.occurredOn">{{
+                transaction.occurredOn | date: 'dd/MM/yyyy' : 'UTC' : 'pt-BR'
+              }}</time>
+              <div>
+                <strong>{{ transaction.description }}</strong>
+                <span>{{ transactionLabel(transaction.type) }}</span>
+              </div>
+              <strong [class.transaction-credit]="transaction.balanceEffect > 0">
+                {{ transaction.balanceEffect > 0 ? '+' : '' }}
+                {{ transaction.balanceEffect | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+              </strong>
+            </article>
+          }
+        }
+      </section>
+    </aside>
+  </div>
+}
+
+@if (showTransferForm()) {
+  <div class="modal-backdrop" (mousedown)="closeTransferForm()">
+    <section
+      class="form-modal transfer-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="transfer-title"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <header>
+        <div>
+          <p class="eyebrow">Movimentação interna</p>
+          <h2 id="transfer-title">Transferir entre contas</h2>
+        </div>
+        <button class="icon-button" type="button" aria-label="Fechar" (click)="closeTransferForm()">
+          ×
+        </button>
+      </header>
+      <form [formGroup]="transferForm" (ngSubmit)="saveTransfer()">
+        <div class="form-grid">
+          <label>
+            <span>Conta origem</span>
+            <select formControlName="sourceAccountId" (change)="onTransferSourceChange()">
+              @for (account of activeAccounts(); track account.id) {
+                <option [value]="account.id">{{ account.name }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>Conta destino</span>
+            <select formControlName="destinationAccountId">
+              @for (account of transferDestinationAccounts(); track account.id) {
+                <option [value]="account.id">{{ account.name }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <div class="form-grid">
+          <label>
+            <span>Valor</span>
+            <input appCurrencyMask formControlName="amount" type="text" inputmode="decimal" />
+          </label>
+          <label>
+            <span>Data</span>
+            <input formControlName="transferDate" type="date" />
+          </label>
+        </div>
+        <label>
+          <span>Descrição opcional</span>
+          <input formControlName="description" type="text" placeholder="Ex.: PIX para reserva" />
+        </label>
+        @if (transferSourceAccount(); as source) {
+          @if (transferDestinationAccount(); as destination) {
+            <section class="transfer-preview" aria-label="Prévia da transferência">
+              <div>
+                <span>{{ source.name }}</span>
+                <strong>{{
+                  source.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+                }}</strong>
+                <small
+                  >Após:
+                  {{
+                    transferSourceBalanceAfter() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+                  }}</small
+                >
+              </div>
+              <i class="ph ph-arrow-right" aria-hidden="true"></i>
+              <div>
+                <span>{{ destination.name }}</span>
+                <strong>{{
+                  destination.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+                }}</strong>
+                <small
+                  >Após:
+                  {{
+                    transferDestinationBalanceAfter()
+                      | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+                  }}</small
+                >
+              </div>
+              <div class="transfer-preview__total">
+                <span>Patrimônio total</span>
+                <strong>
+                  {{
+                    store.overview().totalAvailableBalance
+                      | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+                  }}
+                  →
+                  {{
+                    store.overview().totalAvailableBalance
+                      | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+                  }}
+                </strong>
+              </div>
+            </section>
+          }
+        }
+        @if (
+          transferForm.controls.sourceAccountId.value ===
+          transferForm.controls.destinationAccountId.value
+        ) {
+          <small class="field-error">Origem e destino precisam ser diferentes.</small>
+        }
+        <footer>
+          <button class="button button--secondary" type="button" (click)="closeTransferForm()">
+            Cancelar
+          </button>
+          <button
+            class="button button--primary"
+            type="submit"
+            [disabled]="store.submitting() || activeAccounts().length < 2"
+          >
+            Confirmar transferência
+          </button>
+        </footer>
+      </form>
     </section>
-  </aside>
-</div>
+  </div>
 }
 
 @if (showAccountForm()) {
-<div class="modal-backdrop" (mousedown)="closeAccountForm()">
-  <section class="form-modal" role="dialog" aria-modal="true" aria-labelledby="account-form-title"
-    (mousedown)="$event.stopPropagation()">
-    <header>
-      <div>
-        <p class="eyebrow">
-          {{ editingAccount() ? 'Dados cadastrais' : 'Nova origem de saldo' }}
-        </p>
-        <h2 id="account-form-title">{{ editingAccount() ? 'Editar conta' : 'Nova conta' }}</h2>
-      </div>
-      <button class="icon-button" type="button" aria-label="Fechar" (click)="closeAccountForm()">
-        ×
-      </button>
-    </header>
-    <form [formGroup]="accountForm" (ngSubmit)="saveAccount()">
-      <label>
-        <span>Nome da conta</span>
-        <input formControlName="name" type="text" autocomplete="off" />
-        @if (accountForm.controls.name.touched && accountForm.controls.name.invalid) {
-        <small>Informe um nome com até 120 caracteres.</small>
-        }
-      </label>
-      <label>
-        <span>Instituição</span>
-        <input formControlName="institution" type="text" autocomplete="organization" />
-      </label>
-      <label>
-        <span>Tipo</span>
-        <select formControlName="type">
-          @for (type of accountTypes; track type) {
-          <option [value]="type">{{ typeLabels[type] }}</option>
+  <div class="modal-backdrop" (mousedown)="closeAccountForm()">
+    <section
+      class="form-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="account-form-title"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <header>
+        <div>
+          <p class="eyebrow">
+            {{ editingAccount() ? 'Dados cadastrais' : 'Nova origem de saldo' }}
+          </p>
+          <h2 id="account-form-title">{{ editingAccount() ? 'Editar conta' : 'Nova conta' }}</h2>
+        </div>
+        <button class="icon-button" type="button" aria-label="Fechar" (click)="closeAccountForm()">
+          ×
+        </button>
+      </header>
+      <form [formGroup]="accountForm" (ngSubmit)="saveAccount()">
+        <label>
+          <span>Nome da conta</span>
+          <input formControlName="name" type="text" autocomplete="off" />
+          @if (accountForm.controls.name.touched && accountForm.controls.name.invalid) {
+            <small>Informe um nome com até 120 caracteres.</small>
           }
-        </select>
-      </label>
-      @if (!editingAccount()) {
-      <label>
-        <span>Saldo inicial</span>
-        <input appCurrencyMask [appCurrencyAllowNegative]="true" formControlName="openingBalance" type="text"
-          inputmode="decimal" />
-        <small class="field-help">Valor existente quando a conta entra no Orbiafly.</small>
-      </label>
-      }
-      <footer>
-        <button class="button button--secondary" type="button" (click)="closeAccountForm()">
-          Cancelar
-        </button>
-        <button class="button button--primary" type="submit" [disabled]="store.submitting()">
-          {{ editingAccount() ? 'Salvar dados' : 'Criar conta' }}
-        </button>
-      </footer>
-    </form>
-  </section>
-</div>
+        </label>
+        <label>
+          <span>Instituição</span>
+          <input formControlName="institution" type="text" autocomplete="organization" />
+        </label>
+        <label>
+          <span>Tipo</span>
+          <select formControlName="type">
+            @for (type of accountTypes; track type) {
+              <option [value]="type">{{ typeLabels[type] }}</option>
+            }
+          </select>
+        </label>
+        @if (!editingAccount()) {
+          <label>
+            <span>Saldo inicial</span>
+            <input
+              appCurrencyMask
+              [appCurrencyAllowNegative]="true"
+              formControlName="openingBalance"
+              type="text"
+              inputmode="decimal"
+            />
+            <small class="field-help">Valor existente quando a conta entra no Orbiafly.</small>
+          </label>
+        }
+        <footer>
+          <button class="button button--secondary" type="button" (click)="closeAccountForm()">
+            Cancelar
+          </button>
+          <button class="button button--primary" type="submit" [disabled]="store.submitting()">
+            {{ editingAccount() ? 'Salvar dados' : 'Criar conta' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
 }
 
 @if (adjustingAccount(); as account) {
-<div class="modal-backdrop" (mousedown)="closeAdjustment()">
-  <section class="form-modal adjustment-modal" role="dialog" aria-modal="true" aria-labelledby="adjustment-title"
-    (mousedown)="$event.stopPropagation()">
-    <header>
-      <div>
-        <p class="eyebrow">Conciliação</p>
-        <h2 id="adjustment-title">Ajustar saldo</h2>
-      </div>
-      <button class="icon-button" type="button" aria-label="Fechar" (click)="closeAdjustment()">
-        ×
-      </button>
-    </header>
-    <form [formGroup]="adjustmentForm" (ngSubmit)="saveAdjustment()">
-      <div class="adjustment-context">
-        <span>Saldo Orbiafly</span>
-        <strong>{{
-          account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+  <div class="modal-backdrop" (mousedown)="closeAdjustment()">
+    <section
+      class="form-modal adjustment-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="adjustment-title"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <header>
+        <div>
+          <p class="eyebrow">Conciliação</p>
+          <h2 id="adjustment-title">Ajustar saldo</h2>
+        </div>
+        <button class="icon-button" type="button" aria-label="Fechar" (click)="closeAdjustment()">
+          ×
+        </button>
+      </header>
+      <form [formGroup]="adjustmentForm" (ngSubmit)="saveAdjustment()">
+        <div class="adjustment-context">
+          <span>Saldo Orbiafly</span>
+          <strong>{{
+            account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
           }}</strong>
-      </div>
-      <label>
-        <span>Saldo real</span>
-        <input appCurrencyMask [appCurrencyAllowNegative]="true" formControlName="targetBalance" type="text"
-          inputmode="decimal" />
-      </label>
-      <div class="adjustment-difference">
-        <span>Diferença registrada</span>
-        <strong [class.transaction-credit]="adjustmentDifference() > 0">
-          {{ adjustmentDifference() > 0 ? '+' : '' }}
-          {{ adjustmentDifference() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
-        </strong>
-      </div>
-      <label>
-        <span>Motivo opcional</span>
-        <input formControlName="description" type="text" placeholder="Ex.: Conciliação com extrato" />
-      </label>
-      <footer>
-        <button class="button button--secondary" type="button" (click)="closeAdjustment()">
-          Cancelar
-        </button>
-        <button class="button button--primary" type="submit"
-          [disabled]="store.submitting() || adjustmentDifference() === 0">
-          Registrar ajuste
-        </button>
-      </footer>
-    </form>
-  </section>
-</div>
+        </div>
+        <label>
+          <span>Saldo real</span>
+          <input
+            appCurrencyMask
+            [appCurrencyAllowNegative]="true"
+            formControlName="targetBalance"
+            type="text"
+            inputmode="decimal"
+          />
+        </label>
+        <div class="adjustment-difference">
+          <span>Diferença registrada</span>
+          <strong [class.transaction-credit]="adjustmentDifference() > 0">
+            {{ adjustmentDifference() > 0 ? '+' : '' }}
+            {{ adjustmentDifference() | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+          </strong>
+        </div>
+        <label>
+          <span>Motivo opcional</span>
+          <input
+            formControlName="description"
+            type="text"
+            placeholder="Ex.: Conciliação com extrato"
+          />
+        </label>
+        <footer>
+          <button class="button button--secondary" type="button" (click)="closeAdjustment()">
+            Cancelar
+          </button>
+          <button
+            class="button button--primary"
+            type="submit"
+            [disabled]="store.submitting() || adjustmentDifference() === 0"
+          >
+            Registrar ajuste
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
 }
 
 @if (deactivatingAccount(); as account) {
-<div class="modal-backdrop" (mousedown)="deactivatingAccount.set(null)">
-  <section class="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="deactivate-title"
-    (mousedown)="$event.stopPropagation()">
-    <h2 id="deactivate-title">Desativar {{ account.name }}?</h2>
-    <p>A conta não aparecerá em novos pagamentos. Saldo e movimentações serão preservados.</p>
-    <footer>
-      <button class="button button--secondary" type="button" (click)="deactivatingAccount.set(null)">
-        Cancelar
-      </button>
-      <button class="button button--danger" type="button" (click)="confirmDeactivation()">
-        Desativar conta
-      </button>
-    </footer>
-  </section>
-</div>
+  <div class="modal-backdrop" (mousedown)="deactivatingAccount.set(null)">
+    <section
+      class="confirm-modal"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="deactivate-title"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <h2 id="deactivate-title">Desativar {{ account.name }}?</h2>
+      <p>A conta não aparecerá em novos pagamentos. Saldo e movimentações serão preservados.</p>
+      <footer>
+        <button
+          class="button button--secondary"
+          type="button"
+          (click)="deactivatingAccount.set(null)"
+        >
+          Cancelar
+        </button>
+        <button class="button button--danger" type="button" (click)="confirmDeactivation()">
+          Desativar conta
+        </button>
+      </footer>
+    </section>
+  </div>
 }
 
 @if (deletingAccount(); as account) {
-<div class="modal-backdrop" (mousedown)="deletingAccount.set(null)">
-  <section class="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-title"
-    (mousedown)="$event.stopPropagation()">
-    <h2 id="delete-title">Excluir {{ account.name }}?</h2>
-    <p>
-      A conta será removida da sua visualização e não poderá mais ser utilizada.
-      O histórico financeiro relacionado a ela será preservado.
-    </p>
-    <footer>
-      <button class="button button--secondary" type="button" (click)="deletingAccount.set(null)">
-        Cancelar
-      </button>
-      <button class="button button--danger" type="button" (click)="confirmDeletion()">
-        Excluir conta
-      </button>
-    </footer>
-  </section>
-</div>
+  <div class="modal-backdrop" (mousedown)="deletingAccount.set(null)">
+    <section
+      class="confirm-modal"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="delete-title"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <h2 id="delete-title">Excluir {{ account.name }}?</h2>
+      <p>
+        A conta será removida da sua visualização e não poderá mais ser utilizada. O histórico
+        financeiro relacionado a ela será preservado.
+      </p>
+      <footer>
+        <button class="button button--secondary" type="button" (click)="deletingAccount.set(null)">
+          Cancelar
+        </button>
+        <button class="button button--danger" type="button" (click)="confirmDeletion()">
+          Excluir conta
+        </button>
+      </footer>
+    </section>
+  </div>
 }
