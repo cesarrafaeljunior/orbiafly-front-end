@@ -43,6 +43,7 @@ export interface FinancialTransaction {
     | 'EXPECTED_INCOME'
     | 'ACCOUNT_TRANSFER'
     | 'CREDIT_CARD_PURCHASE'
+    | 'ONE_OFF_EXPENSE'
     | null;
   referenceId: string | null;
   reversalOfId: string | null;

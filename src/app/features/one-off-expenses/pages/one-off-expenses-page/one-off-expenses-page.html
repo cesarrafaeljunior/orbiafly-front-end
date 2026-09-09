@@ -1,0 +1,76 @@
+<main class="workspace">
+  <header class="page-heading">
+    <div>
+      <h1>Gastos avulsos</h1>
+      <p>Registre compras e despesas que não se repetem todo mês.</p>
+    </div>
+    <button class="button button--primary" type="button" (click)="openCreate()">
+      <i class="ph ph-plus" aria-hidden="true"></i> Novo gasto
+    </button>
+  </header>
+
+  <section class="summary" aria-label="Resumo dos gastos avulsos">
+    <article><span>Total do mês</span><strong>{{ store.summary().total | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong><small>{{ store.summary().totalCount }} registros</small></article>
+    <article class="summary__paid"><span>Pago</span><strong>{{ store.summary().paidTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong><small>{{ store.summary().paidCount }} concluídos</small></article>
+    <article><span>Pendente</span><strong>{{ store.summary().pendingTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong><small>{{ store.summary().pendingCount }} aguardando</small></article>
+    <article class="summary__progress"><span>Progresso</span><strong>{{ store.summary().paidPercentage | number: '1.0-1' : 'pt-BR' }}%</strong><small>do valor quitado</small></article>
+    <div class="progress"><span [style.width.%]="store.summary().paidPercentage"></span></div>
+  </section>
+
+  <section class="period" aria-label="Mês selecionado">
+    <button type="button" aria-label="Mês anterior" (click)="moveMonth(-1)"><i class="ph ph-caret-left"></i></button>
+    <div><span>Competência</span><strong>{{ store.periodLabel() }}</strong></div>
+    <button type="button" aria-label="Próximo mês" (click)="moveMonth(1)"><i class="ph ph-caret-right"></i></button>
+  </section>
+
+  <section class="filters" aria-label="Filtros">
+    <label class="search"><i class="ph ph-magnifying-glass"></i><input type="search" placeholder="Buscar gasto ou categoria..." aria-label="Buscar gasto" [value]="store.search()" (input)="setSearch($event)" /></label>
+    <div class="status-filter">
+      @for (filter of [{ value: 'ALL', label: 'Todos' }, { value: 'PENDING', label: 'Pendentes' }, { value: 'PAID', label: 'Pagos' }, { value: 'OVERDUE', label: 'Vencidos' }]; track filter.value) {
+        <button type="button" [class.active]="store.statusFilter() === filter.value" (click)="setStatus($any(filter.value))">{{ filter.label }}</button>
+      }
+    </div>
+    <label class="category"><span>Categoria</span><select [value]="store.categoryFilter()" (change)="setCategory($event)"><option value="ALL">Todas</option>@for (category of store.categories(); track category.id) {<option [value]="category.id">{{ category.name }}</option>}</select></label>
+  </section>
+
+  @if (store.error()) {
+    <section class="feedback" role="alert"><div><strong>Não foi possível carregar a página</strong><p>{{ store.error() }}</p></div><button class="button button--secondary" type="button" (click)="store.initialize()">Tentar novamente</button></section>
+  }
+
+  @if (store.loading()) {
+    <section class="loading" aria-label="Carregando gastos">@for (row of [1, 2, 3]; track row) {<div></div>}</section>
+  } @else if (store.items().length === 0) {
+    <section class="empty"><i class="ph ph-shopping-cart-simple"></i><h2>Nenhum gasto avulso neste mês.</h2><p>Adicione uma compra pontual para acompanhar o impacto no seu orçamento.</p><button class="button button--primary" type="button" (click)="openCreate()">Adicionar primeiro gasto</button></section>
+  } @else if (store.filteredItems().length === 0) {
+    <section class="empty"><h2>Nenhum resultado encontrado.</h2><p>Ajuste a busca ou os filtros para visualizar seus gastos.</p></section>
+  } @else {
+    <section class="expense-list" aria-label="Gastos avulsos do mês">
+      @for (item of store.filteredItems(); track item.id) {
+        <article class="expense-card" [class.expense-card--paid]="item.status === 'PAID'">
+          <div class="expense-icon"><i class="ph ph-shopping-cart-simple"></i></div>
+          <div class="expense-name"><h2>{{ item.name }}</h2><span><i class="ph ph-tag"></i>{{ item.category }}</span></div>
+          <div class="expense-date" [class.expense-date--overdue]="item.overdue"><span>{{ dateLabel(item.expenseDate) }}</span><small>{{ dateContext(item) }}</small></div>
+          <strong class="expense-amount">{{ item.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+          <span class="status" [class.status--paid]="item.status === 'PAID'" [class.status--overdue]="item.overdue"><i class="ph" [class.ph-check-circle]="item.status === 'PAID'" [class.ph-warning]="item.overdue" [class.ph-clock]="item.status === 'PENDING' && !item.overdue"></i>{{ item.status === 'PAID' ? 'Pago' : item.overdue ? 'Vencido' : 'Pendente' }}</span>
+          <div class="actions">
+            <button class="action action--primary" type="button" [disabled]="store.busyIds().has(item.id)" (click)="changePayment(item)"><i class="ph" [class.ph-check-circle]="item.status === 'PENDING'" [class.ph-arrow-counter-clockwise]="item.status === 'PAID'"></i>{{ item.status === 'PAID' ? 'Voltar a pendente' : 'Registrar pagamento' }}</button>
+            <button class="action" type="button" [disabled]="item.status === 'PAID'" (click)="openEdit(item)"><i class="ph ph-pencil-simple"></i>Editar</button>
+            <button class="action action--danger" type="button" [disabled]="item.status === 'PAID'" (click)="deleting.set(item)"><i class="ph ph-trash"></i>Excluir</button>
+          </div>
+        </article>
+      }
+    </section>
+  }
+</main>
+
+@if (formOpen()) {
+  <div class="modal-backdrop" (click)="closeForm()"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="expense-modal-title" (click)="$event.stopPropagation()"><header><div><span>{{ editing() ? 'Editar registro' : 'Novo registro' }}</span><h2 id="expense-modal-title">{{ editing() ? 'Editar gasto avulso' : 'Adicionar gasto avulso' }}</h2></div><button type="button" aria-label="Fechar" (click)="closeForm()"><i class="ph ph-x"></i></button></header><form [formGroup]="expenseForm" (ngSubmit)="save()"><label>Descrição<input type="text" formControlName="name" placeholder="Ex.: Manutenção do carro" /></label><div class="form-row"><label>Valor<input appCurrencyMask type="text" inputmode="decimal" formControlName="amount" /></label><label>Data<input type="date" formControlName="expenseDate" /></label></div><label>Categoria<select formControlName="categoryId"><option value="" disabled>Selecione</option>@for (category of store.categories(); track category.id) {<option [value]="category.id">{{ category.name }}</option>}</select></label><footer><button class="button button--secondary" type="button" (click)="closeForm()">Cancelar</button><button class="button button--primary" type="submit" [disabled]="store.submitting()">{{ store.submitting() ? 'Salvando...' : 'Salvar gasto' }}</button></footer></form></section></div>
+}
+
+@if (paying(); as item) {
+  <div class="modal-backdrop" (click)="paying.set(null)"><section class="modal modal--small" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title" (click)="$event.stopPropagation()"><header><div><span>Pagamento</span><h2 id="payment-modal-title">{{ item.name }}</h2></div><button type="button" aria-label="Fechar" (click)="paying.set(null)"><i class="ph ph-x"></i></button></header><form [formGroup]="paymentForm" (ngSubmit)="confirmPayment()"><div class="payment-value"><span>Valor a debitar</span><strong>{{ item.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong></div><label>Conta<select formControlName="financialAccountId">@for (account of store.accounts(); track account.id) {<option [value]="account.id">{{ account.name }} · {{ account.currentBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</option>}</select></label><label>Data do pagamento<input type="date" formControlName="paymentDate" /></label><footer><button class="button button--secondary" type="button" (click)="paying.set(null)">Cancelar</button><button class="button button--primary" type="submit" [disabled]="store.submitting()">Confirmar pagamento</button></footer></form></section></div>
+}
+
+@if (deleting(); as item) {
+  <div class="modal-backdrop" (click)="deleting.set(null)"><section class="modal modal--small" role="alertdialog" aria-modal="true" aria-labelledby="delete-title" (click)="$event.stopPropagation()"><header><div><span>Excluir registro</span><h2 id="delete-title">Excluir {{ item.name }}?</h2></div></header><p class="delete-copy">O gasto será removido definitivamente do mês.</p><footer><button class="button button--secondary" type="button" (click)="deleting.set(null)">Cancelar</button><button class="button button--danger" type="button" [disabled]="store.submitting()" (click)="confirmDelete()">Excluir gasto</button></footer></section></div>
+}

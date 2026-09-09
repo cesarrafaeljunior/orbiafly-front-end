@@ -38,6 +38,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'gastos-avulsos',
+        loadComponent: () =>
+          import('./features/one-off-expenses/pages/one-off-expenses-page/one-off-expenses-page').then(
+            (component) => component.OneOffExpensesPage,
+          ),
+      },
+      {
         path: 'despesas-fixas',
         loadComponent: () =>
           import('./features/fixed-expenses/pages/fixed-expenses-page/fixed-expenses-page').then(

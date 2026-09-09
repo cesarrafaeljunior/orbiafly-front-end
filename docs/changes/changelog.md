@@ -1,4 +1,9 @@
 # Changelog
+## 2026-09-09
+
+- Adicionada a tela de gastos avulsos com cadastro, edicao, exclusao, filtros e resumo mensal.
+- Integrado pagamento por conta, reversao para pendente e acesso pela rota /gastos-avulsos.
+
 
 ## 2026-09-06
 

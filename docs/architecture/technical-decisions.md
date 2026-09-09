@@ -206,3 +206,11 @@ Registro leve de decisoes arquiteturais do Orbiafly. Nao e necessario seguir um 
 ## 2026-09-05 — API de produção na mesma origem
 
 O build de produção substitui environment.ts por environment.production.ts e usa `/api/v1`. O navegador acessa o Nginx do frontend através do Caddy; o Nginx encaminha `/api/` ao backend privado. Isso permite LAN, Tailscale e acesso por porta sem fixar hostname no bundle. O ambiente de desenvolvimento existente foi preservado.
+
+## ORB - Gastos avulsos - 2026-09-09
+
+- Decisao: criar uma feature dedicada para despesas unicas, reutilizando categorias e contas financeiras existentes.
+- Contexto: gastos nao recorrentes precisam ser acompanhados sem gerar ocorrencias futuras.
+- Motivo: separar compromissos recorrentes de lancamentos pontuais, mantendo a navegacao mensal consistente.
+- Consequencias: filtros sao locais apos a carga mensal; pagamentos usam contas ativas e a API permanece responsavel por saldo e estorno.
+- Status: aceita.

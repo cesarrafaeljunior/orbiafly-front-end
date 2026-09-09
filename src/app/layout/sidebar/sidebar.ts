@@ -38,6 +38,7 @@ export class Sidebar {
       label: 'Gerenciamento',
       items: [
         { label: 'Despesas fixas', path: '/despesas-fixas', icon: 'ph-receipt' },
+        { label: 'Gastos avulsos', path: '/gastos-avulsos', icon: 'ph-shopping-cart-simple' },
         { label: 'Contas', path: '/contas', icon: 'ph-wallet' },
         { label: 'Cartões', path: '/cartoes', icon: 'ph-credit-card' },
         { label: 'Compras do cartão', path: '/compras-parceladas', icon: 'ph-shopping-bag-open' },
