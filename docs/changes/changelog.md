@@ -1,4 +1,11 @@
 # Changelog
+
+## 2026-11-08 - Sessao segura e dependencias
+
+- JWT removido do `localStorage`; a sessao agora usa cookie `HttpOnly` enviado com `withCredentials`.
+- Adicionado logout no backend e limpeza automatica de tokens legados do navegador.
+- Angular atualizado para 22.2.5, ferramentas para 22.2.6 e Zod para 4.6.7; `npm audit` sem vulnerabilidades.
+
 ## 2026-09-09
 
 - Adicionada a tela de gastos avulsos com cadastro, edicao, exclusao, filtros e resumo mensal.

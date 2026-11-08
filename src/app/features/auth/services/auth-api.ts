@@ -23,6 +23,10 @@ export class AuthApi {
     return this.http.post<AuthResponse>(`${this.baseUrl}/register`, payload);
   }
 
+  logout() {
+    return this.http.post<void>(`${this.baseUrl}/logout`, {});
+  }
+
   changePassword(payload: ChangePasswordPayload) {
     return this.http.post<void>(`${this.baseUrl}/change-password`, payload);
   }

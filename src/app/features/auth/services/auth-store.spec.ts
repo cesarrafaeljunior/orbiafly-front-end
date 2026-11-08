@@ -9,7 +9,6 @@ import { AuthStore } from './auth-store';
 
 describe('AuthStore', () => {
   const response = {
-    accessToken: 'jwt-token',
     user: {
       id: 'user-id',
       email: 'admin@admin.com.br',
@@ -21,6 +20,7 @@ describe('AuthStore', () => {
   let api: {
     login: ReturnType<typeof vi.fn>;
     register: ReturnType<typeof vi.fn>;
+    logout: ReturnType<typeof vi.fn>;
   };
   let router: { navigate: ReturnType<typeof vi.fn>; navigateByUrl: ReturnType<typeof vi.fn> };
   let toastService: {
@@ -35,6 +35,7 @@ describe('AuthStore', () => {
     api = {
       login: vi.fn(),
       register: vi.fn(),
+      logout: vi.fn().mockReturnValue(of(undefined)),
     };
     router = {
       navigate: vi.fn().mockResolvedValue(true),
@@ -61,11 +62,10 @@ describe('AuthStore', () => {
 
     await store.login({ login: 'admin', password: 'admin' }, '/contas');
 
-    expect(store.token()).toBe('jwt-token');
     expect(store.user()?.username).toBe('admin');
     expect(store.isAuthenticated()).toBeTruthy();
     expect(store.isAdmin()).toBeTruthy();
-    expect(window.localStorage.getItem('orbiafly.auth.token')).toBe('jwt-token');
+    expect(window.localStorage.getItem('orbiafly.auth.token')).toBeNull();
     expect(router.navigateByUrl).toHaveBeenCalledWith('/contas');
     expect(toastService.success).toHaveBeenCalledWith('Login realizado com sucesso.');
   });

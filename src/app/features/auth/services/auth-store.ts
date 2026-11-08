@@ -14,11 +14,9 @@ import {
 } from '../models/auth.models';
 import { AuthApi } from './auth-api';
 
-const TOKEN_STORAGE_KEY = 'orbiafly.auth.token';
 const USER_STORAGE_KEY = 'orbiafly.auth.user';
 
 interface AuthState {
-  token: string | null;
   user: AuthUser | null;
   loading: boolean;
 }
@@ -29,15 +27,13 @@ export class AuthStore {
   private readonly router = inject(Router);
   private readonly toastService = inject(ToastService);
   private readonly state = signal<AuthState>({
-    token: this.readToken(),
     user: this.readUser(),
     loading: false,
   });
 
-  readonly token = computed(() => this.state().token);
   readonly user = computed(() => this.state().user);
   readonly loading = computed(() => this.state().loading);
-  readonly isAuthenticated = computed(() => Boolean(this.state().token && this.state().user));
+  readonly isAuthenticated = computed(() => Boolean(this.state().user));
   readonly isAdmin = computed(() => this.state().user?.roles.includes('ROLE_ADMIN') ?? false);
 
   async login(payload: LoginPayload, returnUrl = '/dashboard'): Promise<void> {
@@ -59,15 +55,17 @@ export class AuthStore {
   async changePassword(payload: ChangePasswordPayload): Promise<void> {
     await this.performAccountAction(
       () => firstValueFrom(this.api.changePassword(payload)),
-      'Senha alterada com sucesso.',
+      'Senha alterada com sucesso. Entre novamente.',
       'Não foi possível alterar a senha.',
     );
+    this.logout(false);
+    await this.router.navigate(['/login']);
   }
 
   async requestPasswordReset(payload: RequestPasswordResetPayload): Promise<void> {
     await this.performAccountAction(
       () => firstValueFrom(this.api.requestPasswordReset(payload)),
-      'Se a conta existir, o código foi gerado.',
+      'Se a conta existir, o código foi enviado.',
       'Não foi possível solicitar a recuperação.',
     );
   }
@@ -82,6 +80,7 @@ export class AuthStore {
 
   logout(redirect = true): void {
     this.clearSession();
+    void firstValueFrom(this.api.logout()).catch(() => undefined);
     this.toastService.info('Sessão encerrada.');
     if (redirect) {
       void this.router.navigate(['/login']);
@@ -89,13 +88,8 @@ export class AuthStore {
   }
 
   clearSession(): void {
-    this.persistSession(null);
-    this.state.update((current) => ({
-      ...current,
-      token: null,
-      user: null,
-      loading: false,
-    }));
+    this.persistUser(null);
+    this.state.set({ user: null, loading: false });
   }
 
   private async authenticate(
@@ -106,12 +100,8 @@ export class AuthStore {
     this.state.update((current) => ({ ...current, loading: true }));
     try {
       const response = await request();
-      this.persistSession(response);
-      this.state.set({
-        token: response.accessToken,
-        user: response.user,
-        loading: false,
-      });
+      this.persistUser(response.user);
+      this.state.set({ user: response.user, loading: false });
       this.toastService.success(successMessage);
       await this.router.navigateByUrl(redirectUrl);
     } catch (error) {
@@ -138,30 +128,23 @@ export class AuthStore {
     }
   }
 
-  private persistSession(response: AuthResponse | null): void {
+  private persistUser(user: AuthUser | null): void {
     try {
-      if (!response) {
-        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+      if (!user) {
         window.localStorage.removeItem(USER_STORAGE_KEY);
+        window.localStorage.removeItem('orbiafly.auth.token');
         return;
       }
-      window.localStorage.setItem(TOKEN_STORAGE_KEY, response.accessToken);
-      window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.user));
+      window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+      window.localStorage.removeItem('orbiafly.auth.token');
     } catch {
-      // Storage local indisponivel nao deve quebrar o fluxo de autenticacao em runtime restrito.
-    }
-  }
-
-  private readToken(): string | null {
-    try {
-      return window.localStorage.getItem(TOKEN_STORAGE_KEY);
-    } catch {
-      return null;
+      // Storage local indisponível não deve quebrar a autenticação.
     }
   }
 
   private readUser(): AuthUser | null {
     try {
+      window.localStorage.removeItem('orbiafly.auth.token');
       const raw = window.localStorage.getItem(USER_STORAGE_KEY);
       return raw ? (JSON.parse(raw) as AuthUser) : null;
     } catch {

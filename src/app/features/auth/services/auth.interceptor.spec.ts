@@ -18,7 +18,6 @@ describe('authInterceptor', () => {
         {
           provide: AuthStore,
           useValue: {
-            token: () => 'jwt-token',
             clearSession: vi.fn(),
           },
         },
@@ -31,17 +30,17 @@ describe('authInterceptor', () => {
     httpTesting.verify();
   });
 
-  it('adds bearer token to protected API requests', () => {
+  it('sends credentials with protected API requests', () => {
     const http = TestBed.inject(HttpClient);
 
     http.get('/api/v1/accounts').subscribe();
 
     const request = httpTesting.expectOne('/api/v1/accounts');
-    expect(request.request.headers.get('Authorization')).toBe('Bearer jwt-token');
+    expect(request.request.withCredentials).toBeTruthy();
     request.flush({});
   });
 
-  it('does not add bearer token to public auth requests', () => {
+  it('sends credentials without exposing a bearer token on public auth requests', () => {
     const http = TestBed.inject(HttpClient);
 
     http.post('/api/v1/auth/login', {}).subscribe();
@@ -51,13 +50,13 @@ describe('authInterceptor', () => {
     request.flush({});
   });
 
-  it('adds bearer token to authenticated auth requests', () => {
+  it('sends credentials with authenticated auth requests', () => {
     const http = TestBed.inject(HttpClient);
 
     http.post('/api/v1/auth/change-password', {}).subscribe();
 
     const request = httpTesting.expectOne('/api/v1/auth/change-password');
-    expect(request.request.headers.get('Authorization')).toBe('Bearer jwt-token');
+    expect(request.request.withCredentials).toBeTruthy();
     request.flush({});
   });
 });

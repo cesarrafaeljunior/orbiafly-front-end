@@ -152,7 +152,10 @@ describe('CreditCardPurchasesPage', () => {
     expect(element.textContent).toContain('Total do mês');
     expect(element.textContent).toContain('Notebook');
     expect(element.textContent).toContain('Nova compra');
-    expect(element.textContent).toContain('Setembro de 2026');
+    const currentCompetence = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
+      .format(new Date())
+      .replace(/^./, (character) => character.toUpperCase());
+    expect(element.textContent).toContain(currentCompetence);
 
     const input = element.querySelector('input[type="search"]') as HTMLInputElement;
     input.value = 'mercado';
